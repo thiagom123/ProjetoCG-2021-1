@@ -2,10 +2,29 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include "core/Scene.h"
+#include "core/Object.h"
+#include "core/Point.h"
+#include "core/Vector3D.h"
+#include "core/Quadric.h"
+
+
 
 int main() {
+    //Carregar os arquivos de entrada
+    Scene scene;
+    LoadScene("cornell_box\\cornellroom.sdl",scene);
+
+    Eye eye =  scene.eye;
+    Window window = scene.window;
+    vector<Object> objects;
+    vector<Quadric> quadrics;
+    objects = scene.objects;
+    quadrics = scene.quadrics;
+
 
     // Image
+
 
     const int image_width = 256;
     const int image_height = 256;
@@ -14,9 +33,9 @@ int main() {
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-    for (int j = image_height-1; j >= 0; --j) {
-        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < image_width; ++i) {
+    /*for (int j = image_height-1; j >= 0; --j) {
+        //std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+       // for (int i = 0; i < image_width; ++i) {
             
             auto r = double(i) / (image_width-1);
             auto g = double(j) / (image_height-1);
@@ -28,6 +47,6 @@ int main() {
 
             std::cout << ir << ' ' << ig << ' ' << ib << '\n';
         }
-    }
+    }*/
     std::cerr << "\nDone.\n";
 }
