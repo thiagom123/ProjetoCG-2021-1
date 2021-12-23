@@ -7,5 +7,5 @@ public:
 	Vector3D n1, n2, n3; // Normais de cada vertice desse triangulo
 	int v1Index, v2Index, v3Index;
 
-	//void calcularNormaisVertices();
+	void calcularNormaisVertices();
 };

@@ -2,7 +2,14 @@
 #include "Vector3D.h"
 
 
-bool ReadObject(const char* path, Object &objeto){
+void Objeto::normalVertice(){
+	for (int i = 0; i < faces.size(); i++)
+	{
+		faces.at(i).calcularNormaisVertices();
+	}
+}
+
+bool lerObjeto(const char* path, Objeto &objeto){
 	//O método abaixo foi baseado no cógigo encontrado no tutorial de OpenGL:
 	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
@@ -28,7 +35,7 @@ bool ReadObject(const char* path, Object &objeto){
 		// else : parse lineHeader
 
 		if (strcmp(lineHeader, "v") == 0){
-			Vector3D vertex;
+			Vertice vertex;
 			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
 			objeto.vertexs.push_back(vertex);
 

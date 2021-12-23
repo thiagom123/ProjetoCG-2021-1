@@ -22,12 +22,14 @@ public:
 	float coeficienteRefracao;
 
 
-	//void normalVertice(); // Pre-processamento. Calcula e armazena a normal de todos os vertices nas faces
+	void normalVertice(); // Pre-processamento. Calcula e armazena a normal de todos os vertices nas faces
 
 	//Vetor coordBaricentricas(Ponto p, Face f);
 
 	//Vetor normalPonto(Ponto p, Face f);
 
 };
+
+bool lerObjeto(const char* path, Object &Object);
 
 using Objeto = Object;

@@ -1,92 +1,131 @@
-#pragma once
-
 #ifndef VEC3_H
 #define VEC3_H
+//==============================================================================================
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
+//
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
+
+#include <cmath>
 #include <iostream>
-#include  <cmath>
+#include <random>
 
 using std::sqrt;
+using std::fabs;
 
 class Vector3D {
     public:
-        double e[3];
-        float x=e[0], y=e[1], z=e[2];
-        Vector3D() : e{0,0,0} {}
-        Vector3D(float x, float y, float z) : e{x, y, z} {}
+        vec3() : e{0,0,0} {}
+        vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
+        double x = e[0];
+        double y = e[1];
+        double z = e[2];
 
         double x() const { return e[0]; }
         double y() const { return e[1]; }
         double z() const { return e[2]; }
 
-        Vector3D operator-() const { return Vector3D(-x, -y, -z); }
+        Vector3D operator-() const { return Vector3D(-e[0], -e[1], -e[2]); }
+        double operator[](int i) const { return e[i]; }
+        double& operator[](int i) { return e[i]; }
+
         Vector3D& operator+=(const Vector3D &v) {
-                x += v.x;
-                y += v.y;
-                z += v.z;
-                return *this;
-            }
+            e[0] += v.e[0];
+            e[1] += v.e[1];
+            e[2] += v.e[2];
+            return *this;
+        }
+
         Vector3D& operator*=(const double t) {
-                x *= t;
-                y *= t;
-                z *= t;
-                return *this;
-            }
+            e[0] *= t;
+            e[1] *= t;
+            e[2] *= t;
+            return *this;
+        }
 
         Vector3D& operator/=(const double t) {
-                return *this *= 1/t;
-            }
+            return *this *= 1/t;
+        }
+
         double length() const {
-                return sqrt(length_squared());
-            }
+            return sqrt(length_squared());
+        }
 
         double length_squared() const {
-                return x*x + y*y+z*z;
-            }
-  
-   
-    using Point = Vector3D;
-    using Vertex = Vector3D;
-    using Vertice = Vector3D;
+            return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+        }
+
+        bool near_zero() const {
+            // Return true if the vector is close to zero in all dimensions.
+            const auto s = 1e-8;
+            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        }
 
 
-};  
+    public:
+        double e[3];
+        
+};
+
+
+// Type aliases for vec3
+using Point = Vector3D;
+using vec3 = Vector3D;   // 3D point
+using Color = Vector3D;    // RGB color
+using Vertex = Vector3D;
+using Vertice = Vector3D;
+
+// vec3 Utility Functions
+
+inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
+    return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
+}
+
+inline vec3 operator+(const vec3 &u, const vec3 &v) {
+    return vec3(u.e[0] + v.e[0], u.e[1] + v.e[1], u.e[2] + v.e[2]);
+}
+
+inline vec3 operator-(const vec3 &u, const vec3 &v) {
+    return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
+}
+
+inline vec3 operator*(const vec3 &u, const vec3 &v) {
+    return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);
+}
+
+inline vec3 operator*(double t, const vec3 &v) {
+    return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
+}
+
+inline vec3 operator*(const vec3 &v, double t) {
+    return t * v;
+}
+
+inline vec3 operator/(vec3 v, double t) {
+    return (1/t) * v;
+}
+
+inline double dot(const vec3 &u, const vec3 &v) {
+    return u.e[0] * v.e[0]
+         + u.e[1] * v.e[1]
+         + u.e[2] * v.e[2];
+}
+
+inline vec3 cross(const vec3 &u, const vec3 &v) {
+    return vec3(u.e[1] * v.e[2] - u.e[2] * v.e[1],
+                u.e[2] * v.e[0] - u.e[0] * v.e[2],
+                u.e[0] * v.e[1] - u.e[1] * v.e[0]);
+}
+
+inline vec3 unit_vector(vec3 v) {
+    return v / v.length();
+}
+
+
 
 #endif
-    inline std::ostream& operator<<(std::ostream &out, const Vector3D &v) {
-        return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
-    }
-
-    inline Vector3D operator+(const Vector3D &u, const Vector3D &v) {
-        return Vector3D(u.x + v.x, u.y + v.y, u.z + v.z);
-    }
-
-    inline Vector3D operator-(const Vector3D &u, const Vector3D &v) {
-        return Vector3D(u.x - v.x, u.y - v.y, u.z - v.z);
-    }
-
-  inline Vector3D operator*(double t, const Vector3D &v) {
-        return Vector3D(t*v.x, t*v.y, t*v.z);
-    }
-
-    inline Vector3D operator*(const Vector3D &v, double t) {
-        return t * v;
-    }
-    inline Vector3D operator/(Vector3D v, double t) {
-        return (1/t) * v;
-    }
-
-    inline double dot(const Vector3D &u, const Vector3D &v) {
-        return u.e[0] * v.e[0]
-            + u.e[1] * v.e[1]
-            + u.e[2] * v.e[2];
-    }
-
-    inline Vector3D cross(const Vector3D &u, const Vector3D &v) {
-        return Vector3D(u.e[1] * v.e[2] - u.e[2] * v.e[1],
-                    u.e[2] * v.e[0] - u.e[0] * v.e[2],
-                    u.e[0] * v.e[1] - u.e[1] * v.e[0]);
-    }
-
-    inline Vector3D unit_vector(Vector3D v) {
-        return v / v.length();
-    }
