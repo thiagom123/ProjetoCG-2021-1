@@ -12,11 +12,11 @@ class Vector3D {
         double e[3];
         float x=e[0], y=e[1], z=e[2];
         Vector3D() : e{0,0,0} {}
-        Vector3D(float e0, float e1, float e2) : e{x, y, z} {}
+        Vector3D(float x, float y, float z) : e{x, y, z} {}
 
-        double x() const { return x; }
-        double y() const { return y; }
-        double z() const { return z; }
+        double x() const { return e[0]; }
+        double y() const { return e[1]; }
+        double z() const { return e[2]; }
 
         Vector3D operator-() const { return Vector3D(-x, -y, -z); }
         Vector3D& operator+=(const Vector3D &v) {
@@ -44,7 +44,9 @@ class Vector3D {
             }
   
    
-
+    using Point = Vector3D;
+    using Vertex = Vector3D;
+    using Vertice = Vector3D;
 
 
 };  

@@ -2,7 +2,7 @@
 #include <cstring>
 #include "Color.h"
 #include "Object.h"
-#include "Point.h"
+#include "Vector3D.h"
 
 
 class Eye{
@@ -17,7 +17,7 @@ public:
 
 class Light {
 public:
-	Point point;
+	Vector3D point;
 	Color color;
 	float Ip;
 	Object* object;

@@ -1,5 +1,5 @@
 #include "Object.h"
-#include "Point.h"
+#include "Vector3D.h"
 
 
 bool ReadObject(const char* path, Object &objeto){
@@ -28,7 +28,7 @@ bool ReadObject(const char* path, Object &objeto){
 		// else : parse lineHeader
 
 		if (strcmp(lineHeader, "v") == 0){
-			Vertex vertex;
+			Vector3D vertex;
 			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
 			objeto.vertexs.push_back(vertex);
 

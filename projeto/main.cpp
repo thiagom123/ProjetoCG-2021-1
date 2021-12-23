@@ -4,7 +4,7 @@
 #include <iostream>
 #include "core\Scene.h"
 #include "core\Object.h"
-#include "core\Point.h"
+
 
 
 

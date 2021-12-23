@@ -6,7 +6,7 @@
 
 #include "Color.h"
 #include "Face.h"
-
+#include "Vector3D.h"
 using namespace std;
 
 class Object{
@@ -14,7 +14,7 @@ public:
 	char path[100];
 	Color color;
 	float ka, kd, ks, kt, coeficienteEspecular;
-	vector<Vertex> vertexs;
+	vector<Vector3D> vertexs;
 	vector<Face> faces;
 	//BoundingBox boundingBox;
 	bool isLight = false;
