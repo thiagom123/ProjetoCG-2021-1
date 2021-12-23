@@ -65,4 +65,5 @@ bool LoadScene(const char* path, Scene &Scene){
 		}
 
     }
+	return true;
 }
