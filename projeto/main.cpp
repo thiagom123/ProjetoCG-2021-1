@@ -2,51 +2,36 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
-#include "core/Scene.h"
-#include "core/Object.h"
-#include "core/Point.h"
-#include "core/Vector3D.h"
-#include "core/Quadric.h"
+#include <cstring>
+#include "core\Cena.h"
+#include "core\Objeto.h"
+#include "core\Ponto.h"
+#include "core\Vetor.h"
+#include "core\Quadric.h"
 
-
-
+vector<Objeto> objetos;
 int main() {
     //Carregar os arquivos de entrada
-    Scene scene;
-    LoadScene("cornell_box\\cornellroom.sdl",scene);
+    Cena scene;
+    bool temp = lerCena("cornell_box\\cornellroom.sdl",scene);
 
-    Eye eye =  scene.eye;
-    Window window = scene.window;
-    vector<Object> objects;
-    vector<Quadric> quadrics;
-    objects = scene.objects;
-    quadrics = scene.quadrics;
-
-
-    // Image
-
-
-    const int image_width = 256;
-    const int image_height = 256;
-
-    // Render
-
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
-    /*for (int j = image_height-1; j >= 0; --j) {
-        //std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-       // for (int i = 0; i < image_width; ++i) {
-            
-            auto r = double(i) / (image_width-1);
-            auto g = double(j) / (image_height-1);
-            auto b = 0.25;
-
-            int ir = static_cast<int>(255.999 * r);
-            int ig = static_cast<int>(255.999 * g);
-            int ib = static_cast<int>(255.999 * b);
-
-            std::cout << ir << ' ' << ig << ' ' << ib << '\n';
-        }
-    }*/
-    std::cerr << "\nDone.\n";
+    if(temp){
+        std::cout << scene.objetos.size() << std::endl;
+    }else{
+        std::cout << "Não Passou" << std::endl;
+    }
+    objetos = scene.objetos;
+    std::cout << objetos.at(1).path << std::endl;
+    for (int i = 0; i < scene.objetos.size(); i++)
+	{
+        std::string objPath = "cornell_box\\";
+		//char realPath [100]= "cornel_box\\";
+		//strcat(objPath, objetos.at(i).path);
+        objPath += objetos.at(i).path;
+        std::cout << objPath << std::endl;
+		lerObjeto(objPath.c_str(), objetos.at(i));
+		objetos.at(i).normalVertice();
+	}
+    std::cout << objetos.at(1).vertices.at(1).z << std::endl;
+    return 0;
 }

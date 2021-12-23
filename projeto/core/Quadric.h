@@ -1,6 +1,4 @@
-
-//#ifndef _quadric_h
-#define _quadric_h
+#pragma once
 
 typedef struct vec {// Vector structor
 	double  x, y, z;// Coefficents of vector direction

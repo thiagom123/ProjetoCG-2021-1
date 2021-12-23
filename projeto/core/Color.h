@@ -1,5 +1,5 @@
 #pragma once
-#include "Vector3D.h"
+#include "Vetor.h"
 class Color
 {
 public:
@@ -7,6 +7,12 @@ public:
 
 	Color();
 	Color(float r, float g, float b);
-	Color(Vector3D v);
+	Color(Vetor v);
 
+	Vetor toVetor();
+
+	~Color();
 };
+
+// Soma de cores
+Color csum(Color c1, Color c2);
