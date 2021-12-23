@@ -1,8 +1,9 @@
 #include <vector>
+#include <cstring>
 #include "Color.h"
 #include "Object.h"
 #include "Point.h"
-#include "Quadric.h"
+
 
 class Eye{
 public:
@@ -32,7 +33,6 @@ public:
 
 	Light light;
 	vector<Object> objects;
-	vector<Quadric> quadrics;
 	Eye eye;
 	Window window;
 };

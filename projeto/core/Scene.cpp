@@ -58,17 +58,11 @@ bool LoadScene(const char* path, Scene &Scene){
 			fscanf(file, "%s %f %f %f %f %f %f %f %f %f\n", &o.path, &o.color.r, &o.color.g, &o.color.b, &o.ka, &o.kd, &o.ks, &o.kt, &o.coeficienteEspecular, &o.coeficienteRefracao);
 			Scene.objects.push_back(o);
 		}
-		else if (strcmp(lineHeader, "quadric") == 0){
-			Quadric q;
-			fscanf(file, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", &q.a, &q.b, &q.c, &q.d, &q.e, &q.f, &q.g, &q.h, &q.j, &q.k, &q.color.r, &q.color.g, &q.color.b,
-				&q.ka, &q.kd, &q.ks, &q.kt, &q.coeficienteEspecular, &q.coeficienteRefracao);
-			Scene.quadrics.push_back(q);
-		}
 		else{
 			// Probably a comment, eat up the rest of the line
 			char stupidBuffer[1000];
 			fgets(stupidBuffer, 1000, file);
-
+		}
 
     }
 }

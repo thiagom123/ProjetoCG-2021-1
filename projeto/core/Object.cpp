@@ -66,7 +66,7 @@ bool ReadObject(const char* path, Object &objeto){
 		currentFace.v3 = &objeto.vertexs.at(currentFace.v3Index - 1);
 	}
 
-	objeto.boundingBox.fill(gx, lx, gy, ly, gz, lz);
+	//objeto.boundingBox.fill(gx, lx, gy, ly, gz, lz);
 
 	return true;
 }

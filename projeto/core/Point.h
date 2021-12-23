@@ -7,3 +7,4 @@ public:
 };
 
 using Vertex = Point;
+using Vertice = Point;

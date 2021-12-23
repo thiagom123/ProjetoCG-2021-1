@@ -2,25 +2,22 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
-#include "core/Scene.h"
-#include "core/Object.h"
-#include "core/Point.h"
-#include "core/Vector3D.h"
-#include "core/Quadric.h"
+#include "core\Scene.h"
+#include "core\Object.h"
+#include "core\Point.h"
 
 
 
 int main() {
     //Carregar os arquivos de entrada
     Scene scene;
+    
     LoadScene("cornell_box\\cornellroom.sdl",scene);
 
     Eye eye =  scene.eye;
     Window window = scene.window;
     vector<Object> objects;
-    vector<Quadric> quadrics;
     objects = scene.objects;
-    quadrics = scene.quadrics;
 
 
     // Image

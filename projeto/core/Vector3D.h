@@ -1,7 +1,7 @@
-
+#pragma once
 #include <iostream>
 
-using std::sqrt;
+//using std::sqrt;
 
 class Vector3D {
     public:

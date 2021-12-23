@@ -1,6 +1,7 @@
-
+#pragma once
 //#ifndef _quadric_h
 #define _quadric_h
+
 
 typedef struct vec {// Vector structor
 	double  x, y, z;// Coefficents of vector direction
@@ -9,7 +10,7 @@ typedef struct vec {// Vector structor
 typedef struct light {// Point light structure
 	Vec    dir;// Direction to light
 	double  Int;// Light intensity
-}Light;
+}LightQuad;
 
 typedef struct mat {// Material structure
 	double  r;// Red component

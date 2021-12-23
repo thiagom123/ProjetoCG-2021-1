@@ -1,12 +1,11 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstring>
 #include <vector>
 
 #include "Color.h"
 #include "Face.h"
-#include "quadric.h"
-
 
 using namespace std;
 
@@ -31,9 +30,4 @@ public:
 
 };
 
-class Quadric : public Object {
-public:
-	float a, b, c, d, e, f, g, h, j, k;
-
-	Quad toQuad();
-};
+using Objeto = Object;

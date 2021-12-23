@@ -9,4 +9,7 @@ public:
 	Color(float r, float g, float b);
 	Color(Vector3D v);
 
+	~Color();
+
 };
+using Cor = Color;

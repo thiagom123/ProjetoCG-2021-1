@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector3D.h"
+#include "Point.h"
 class Face{
 public:
 	Vertex *v1, *v2, *v3; // Ponteiros para os vertices desse triangulo
