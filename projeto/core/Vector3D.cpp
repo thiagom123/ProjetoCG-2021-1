@@ -91,7 +91,7 @@ Vector3D divisao(Vector3D a, float b){
 	retorno.x = a.x/b;
 	retorno.y = a.y/b;
 	retorno.z = a.z/b;
-	std::cout << retorno.x <<" "<< retorno.y <<" "<< retorno.z << std::endl;
+	//std::cout << retorno.x <<" "<< retorno.y <<" "<< retorno.z << std::endl;
 	return retorno;
 }
 
