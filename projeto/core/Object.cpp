@@ -35,7 +35,7 @@ bool lerObjeto(const char* path, Objeto &objeto){
 		// else : parse lineHeader
 
 		if (strcmp(lineHeader, "v") == 0){
-			Vertice vertex;
+			Vertex vertex;
 			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
 			objeto.vertexs.push_back(vertex);
 

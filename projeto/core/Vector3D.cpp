@@ -4,7 +4,7 @@
 #include "Vector3D.h"
 
 
-float Vetor::Norm(){
+float Vector3D::Norm(){
 	float a = this->x*this->x;
 	float b = this->y*this->y;
 	float c = this->z*this->z;
@@ -15,7 +15,7 @@ float Vetor::Norm(){
 
 
 // Soma de vetores
-Vector3D Sumv(Vetor v1, Vetor v2){
+Vector3D Sumv(Vector3D v1, Vector3D v2){
 	Vector3D out;
 	out.x = v1.x + v2.x;
 	out.y = v1.y + v2.y;
@@ -26,7 +26,7 @@ Vector3D Sumv(Vetor v1, Vetor v2){
 //Funcoes matematicas importantes
 
 // Produto escalar x vetor
-Vector3D KProd(float k, Vetor c){
+Vector3D KProd(float k, Vector3D c){
 	Vector3D out;
 	out.x = c.x*k;
 	out.y = c.y*k;
@@ -64,7 +64,7 @@ float ProdEscalar(Vector3D vetor1, Vector3D vetor2){
 //Produto Vetorial
 Vector3D ProdVetorial(Vector3D vetor1, Vector3D vetor2){
 
-	Vetor resposta;
+	Vector3D resposta;
 	resposta.x = (vetor1.y*vetor2.z) + (-1 * vetor1.z*vetor2.y);
 	resposta.y = (vetor1.z*vetor2.x) + (-1 * vetor1.x*vetor2.z);
 	resposta.z = (vetor1.x*vetor2.y) + (-1 * vetor1.y*vetor2.x);
@@ -77,10 +77,40 @@ Vector3D Normalize(Vector3D vetor){
 
 	float modulo = sqrt(vetor.x*vetor.x + vetor.y*vetor.y + vetor.z*vetor.z);
 
-	Vetor vetorNormalizado = Vetor();
+	Vector3D vetorNormalizado;
 	vetorNormalizado.x = vetor.x / modulo;
 	vetorNormalizado.y = vetor.y / modulo;
 	vetorNormalizado.z = vetor.z / modulo;
 
 	return vetorNormalizado;
+}
+
+Vector3D divisao(Vector3D a, float b){
+	Vector3D retorno;
+
+	retorno.x = a.x/b;
+	retorno.y = a.y/b;
+	retorno.z = a.z/b;
+	std::cout << retorno.x <<" "<< retorno.y <<" "<< retorno.z << std::endl;
+	return retorno;
+}
+
+Vector3D pointToVector(Point A){
+	Vector3D retorno;
+
+	retorno.x = A.x;
+	retorno.y = A.y;
+	retorno.z = A.z;
+
+	return retorno;
+}
+
+Point vectorToPoint(Vector3D A){
+	Point retorno;
+
+	retorno.x = A.x;
+	retorno.y = A.y;
+	retorno.z = A.z;
+
+	return retorno;
 }

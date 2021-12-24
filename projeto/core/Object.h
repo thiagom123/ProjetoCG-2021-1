@@ -14,7 +14,7 @@ public:
 	char path[100];
 	Color color;
 	float ka, kd, ks, kt, coeficienteEspecular;
-	vector<Vector3D> vertexs;
+	vector<Vertex> vertexs;
 	vector<Face> faces;
 	//BoundingBox boundingBox;
 	bool isLight = false;

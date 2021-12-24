@@ -9,7 +9,9 @@ public:
 	Color(float r, float g, float b);
 	Color(Vector3D v);
 
+	Vector3D toVetor();
 	~Color();
-
 };
+
+Color csum(Color c1, Color c2);
 using Cor = Color;

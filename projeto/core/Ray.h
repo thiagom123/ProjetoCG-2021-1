@@ -8,9 +8,9 @@ class Ray{
 		Point position;
 		Vector3D direction;
 
-		Point PointAtT(double t) {
+		/*Point PointAtT(double t) {
 			//return SomarComVetor(position, t*direction);
-		}
+		}*/
 		
         
 };
