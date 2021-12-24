@@ -1,5 +1,5 @@
 #include "Vetor.h"
-
+#include <iostream>
 float Vetor::norma(){
 	float a = this->x*this->x;
 	float b = this->y*this->y;
@@ -61,11 +61,41 @@ float escalar(Vetor vetor1, Vetor vetor2){
 Vetor vetorial(Vetor vetor1, Vetor vetor2){
 
 	Vetor resposta;
-	resposta.x = (vetor1.y*vetor2.z) + (-1 * vetor1.z*vetor2.y);
-	resposta.y = (vetor1.z*vetor2.x) + (-1 * vetor1.x*vetor2.z);
-	resposta.z = (vetor1.x*vetor2.y) + (-1 * vetor1.y*vetor2.x);
+	resposta.x = (vetor1.y*vetor2.z) - (vetor1.z*vetor2.y);
+	resposta.y = (vetor1.z*vetor2.x) - (vetor1.x*vetor2.z);
+	resposta.z = (vetor1.x*vetor2.y) - (vetor1.y*vetor2.x);
 
 	return resposta;
+}
+
+Vetor divisao(Vetor a, float b){
+	Vetor retorno;
+
+	retorno.x = a.x/b;
+	retorno.y = a.y/b;
+	retorno.z = a.z/b;
+	std::cout << retorno.x <<" "<< retorno.y <<" "<< retorno.z << std::endl;
+	return retorno;
+}
+
+Vetor pointToVector(Ponto A){
+	Vetor retorno;
+
+	retorno.x = A.x;
+	retorno.y = A.y;
+	retorno.z = A.z;
+
+	return retorno;
+}
+
+Ponto vectorToPoint(Vetor A){
+	Ponto retorno;
+
+	retorno.x = A.x;
+	retorno.y = A.y;
+	retorno.z = A.z;
+
+	return retorno;
 }
 
 //Normalizar vetor
@@ -73,7 +103,7 @@ Vetor normalizar(Vetor vetor){
 
 	float modulo = sqrt(vetor.x*vetor.x + vetor.y*vetor.y + vetor.z*vetor.z);
 
-	Vetor vetorNormalizado = Vetor();
+	Vetor vetorNormalizado;
 	vetorNormalizado.x = vetor.x / modulo;
 	vetorNormalizado.y = vetor.y / modulo;
 	vetorNormalizado.z = vetor.z / modulo;

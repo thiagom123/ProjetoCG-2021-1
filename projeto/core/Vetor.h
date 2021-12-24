@@ -10,7 +10,9 @@ public:
 };
 
 Vetor defVetor(Ponto ponto1, Ponto ponto2); // Definir um vetor a partir de dois pontos. Resultado aponta de ponto1 para ponto2
-
+Vetor divisao(Vetor a, float b);
+Vetor pointToVector(Ponto A);
+Ponto vectorToPoint(Vetor A);
 Vetor kprod(float k, Vetor c); // Produto de escalar por vetor
 Vetor vsum(Vetor v1, Vetor v2); // Soma de vetores
 Vetor subVetor(Vetor v1, Vetor v2); // Subtracao de vetores
