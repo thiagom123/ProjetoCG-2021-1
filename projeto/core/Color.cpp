@@ -1,4 +1,5 @@
 #include "Color.h"
+#include <iostream>
 
 Color::Color(){
 	this->r = 0;

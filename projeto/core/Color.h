@@ -14,4 +14,5 @@ public:
 };
 
 Color csum(Color c1, Color c2);
+
 using Cor = Color;
