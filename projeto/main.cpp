@@ -11,6 +11,14 @@
 
 vector<Objeto> objetos;
 
+double DistEuclidiana(Point A, Point B){
+		double diffx = A.x - B.x;
+		double diffy = A.y - B.y;
+		double diffz = A.z - B.z;
+		double diff = diffx*diffx + diffy*diffy + diffz*diffz;
+		return diff;
+	}
+
 Point* intersection(Ray ray,Vertex A, Vertex B, Vertex C){
     Vector3D ab = DefVector(A,B);//(B-A)
     Vector3D ac = DefVector(A,C);//(C-A)
@@ -34,6 +42,36 @@ Point* intersection(Ray ray,Vertex A, Vertex B, Vertex C){
         return &Q;
     }
     return NULL;
+}
+Object* ClosestObject(Ray ray){
+    Point* ClosestIntersection;
+    Object* ClosestObj;
+    Object CurrentObj;
+    vector<Face> CurrentFaces;
+    double minDist = INT_MAX;
+    for(int i = 0; i< objetos.size(); i++){
+        CurrentObj = objetos.at(i);
+        CurrentFaces = CurrentObj.faces;
+        for (int j=0; j< CurrentFaces.size(); j++){
+            Face f = CurrentFaces.at(j);
+            Vertex* P1 = f.v1;
+            Vertex* P2 = f.v2;
+            Vertex* P3 = f.v3;
+            Point* Intersection = intersection(ray, *P1, *P2, *P3);
+            double d = DistEuclidiana(*Intersection, ray.position);
+            if (d>0 && d<minDist){
+                minDist = d;
+                ClosestObj = &CurrentObj;
+            }
+        }
+    };
+    return ClosestObj;
+
+
+}
+
+void PathTracing(){
+
 }
 
 Vector3D* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){

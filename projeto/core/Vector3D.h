@@ -12,12 +12,9 @@ public:
 
 	float Norm();
 };
-// Type aliases for vec3
-/*using Point = Vector3D;
-using vec3 = Vector3D;   // 3D point
-using Vertex = Vector3D;
-using Vertice = Vector3D;
-using Vetor = Vector3D;*/
+
+using vec3 = Vector3D;
+using Vetor = Vector3D;
 
 Vector3D DefVector(Point ponto1, Point ponto2); // Definir um vetor a partir de dois pontos. Resultado aponta de ponto1 para ponto2
 Vector3D divisao(Vector3D a, float b);

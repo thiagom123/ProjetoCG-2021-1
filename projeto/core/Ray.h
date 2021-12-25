@@ -11,6 +11,7 @@ class Ray{
 		/*Point PointAtT(double t) {
 			//return SomarComVetor(position, t*direction);
 		}*/
+
 		
         
 };

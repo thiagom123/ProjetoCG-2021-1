@@ -11,8 +11,10 @@ public:
 			P1.z = P.z +v.z;
 			return P1;
 		}*/
+	
 };
 
 class Vertex : public Point{
 
 };
+using Vertice = Point;
