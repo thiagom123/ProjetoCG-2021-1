@@ -11,6 +11,9 @@
 
 
 vector<Objeto> objetos;
+//Profundidade máxima de cada path
+//Quantidade de raios secundários permitidos, por path
+const int MAX_DEPTH = 5;
 const int image_width = 256;
 const int image_height = 256;
 
@@ -221,14 +224,15 @@ float tColor(float x){ return pow(clamp(x), 1 / 2.2); };
 Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int nSample){
     
     float bias = 1e-4;
-
+    if(depth>MAX_DEPTH){
+        return Color(0,0,0);
+    }
     Intersec intersection = ClosestObject(ray);
     if (intersection.hit == false){
         return scene.background;
     }else if (intersection.objeto.isLight){
         return luz.color;
     }
-
 
     int triangulo = rand() % 2;
 	Face triLuz = objetos.at(0).faces.at(triangulo);
@@ -250,28 +254,26 @@ Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int n
 	lightRand.y = v1->y;
 	lightRand.z = alpha*v1->z + beta*v2->z + gama*v3->z;
 
-	Vector3D toLight = Normalize(DefVector(intersection.p, vectorToPoint(scene.light.point)));
+	//Vector3D toLight = Normalize(DefVector(intersection.p, vectorToPoint(scene.light.point)));
+    Vector3D toLight = pointToVector(lightRand);
 	float kd = intersection.objeto.kd, ks = intersection.objeto.ks, kt = intersection.objeto.kt;
 
     //Rambiente = Ia*kar
 	float iA = scene.ambient;
-	Vector3D ambiente = KProd(iA*intersection.objeto.ka, intersection.objeto.color.toVetor());
+	Color ambiente = KProd(iA*intersection.objeto.ka, intersection.objeto.color.toVetor());
 
 	//Rdifuso = Ip*kd(L.N)r
+    //TESTAR SEM ESSES COMPONENTES
 	Color compDifuso = difuso(luz.color, intersection.objeto.kd, toLight, intersection.normal, intersection.objeto.color);
 
 	//Respecular = Ip*ks*(R.V)^n
     Color compEspecular = especular(ray, luz, toLight, intersection);
-	/*Vector3D rVetor = Subv(KProd(2 * ProdEscalar(toLight,intersection.normal), intersection.normal), toLight);
-	rVetor = Normalize(rVetor);
-	Vector3D vVetor = KProd(-1, ray.direction);
-	vVetor = Normalize(vVetor);
-	Color especular;
-	float aux = pow(ProdEscalar(rVetor, vVetor), intersection.objeto.coeficienteEspecular);
-	aux = luz.Ip*intersection.objeto.ks*aux;
-	especular.r = luz.color.r*aux;
-	especular.g = luz.color.g*aux;
-	especular.b = luz.color.b*aux;*/
+
+    //SHADOWRAY
+
+    //DIFUSA
+    //ESPECULAR
+    //REFRAÇÃO
 
 }
 

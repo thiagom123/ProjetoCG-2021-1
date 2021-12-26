@@ -18,7 +18,7 @@ public:
 	vector<Face> faces;
 	//BoundingBox boundingBox;
 	bool isLight = false;
-	bool isTexture = false;
+	//bool isTexture = false;
 	float coeficienteRefracao;
 
 
