@@ -39,7 +39,9 @@ bool LoadScene(const char* path, Scene &Scene){
 		}
 		else if (strcmp(lineHeader, "light") == 0){
 			Object o;
-			fscanf(file, "%s %f %f %f %f %f %f %f\n", &o.path, &Scene.light.color.r, &Scene.light.color.g, &Scene.light.color.b, &Scene.light.Ip, &Scene.light.point.x, &Scene.light.point.y, &Scene.light.point.z);
+
+			//ACHO QUE NÃO PRECISA DAS COORDENADAS X AQUI		
+			fscanf(file, "%s %f %f %f %f %f %f %f\n", &o.path, &Scene.light.color.r, &Scene.light.color.g, &Scene.light.color.b, &Scene.light.Ip);
 			o.isLight = true;
 			Scene.objects.push_back(o);
 			Scene.light.object = &o;
@@ -59,9 +61,8 @@ bool LoadScene(const char* path, Scene &Scene){
 			Scene.objects.push_back(o);
 		}
 		else{
-			// Probably a comment, eat up the rest of the line
-			char stupidBuffer[1000];
-			fgets(stupidBuffer, 1000, file);
+			char Ignorar[1000];
+			fgets(Ignorar, 1000, file);
 		}
 
     }

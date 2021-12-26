@@ -26,13 +26,13 @@ bool lerObjeto(const char* path, Objeto &objeto){
 	while (1){
 
 		char lineHeader[128];
-		// read the first word of the line
+		// Leia a primeira palavra da linha
 		int res = fscanf(file, "%s", lineHeader);
 
 		if (res == EOF)
-			break; // EOF = End Of File. Quit the loop.
+			break; 
 
-		// else : parse lineHeader
+		// Se não for EOF, continue
 
 		if (strcmp(lineHeader, "v") == 0){
 			Vertex vertex;
@@ -49,6 +49,7 @@ bool lerObjeto(const char* path, Objeto &objeto){
 		else if (strcmp(lineHeader, "f") == 0){
 			std::string vertex1, vertex2, vertex3;
 			unsigned int vertexIndex[3];
+			//ACHO QUE NÃO ESTÁ SENDO USADO esse matches
 			int matches = fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
 
 			Face t;
@@ -58,9 +59,9 @@ bool lerObjeto(const char* path, Objeto &objeto){
 			objeto.faces.push_back(t);
 		}
 		else{
-			// Probably a comment, eat up the rest of the line
-			char stupidBuffer[1000];
-			fgets(stupidBuffer, 1000, file);
+			// Ignorar o resto
+			char ignorar[1000];
+			fgets(ignorar, 1000, file);
 		}
 
 	}

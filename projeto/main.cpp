@@ -9,8 +9,56 @@
 #include "core\Vector3D.h"
 #include "core\Ray.h"
 
+
 vector<Objeto> objetos;
-const int MAX_PATH_DEPTH = 5;
+const int image_width = 256;
+const int image_height = 256;
+
+
+struct Intersec{
+    public:
+	Object objeto;
+	Point p;
+	Vector3D normal;
+	bool hit;
+    private:
+	Face f;
+};
+
+struct PointNorm{
+    public:
+    Point p;
+    Vector3D normal;
+};
+
+Color difuso(Color ip, float kd, Vector3D lightDir, Vector3D normal, Color corObjeto){
+
+	Color retorno;
+	float prodEscalar = ProdEscalar(lightDir, normal);		
+	float aux = kd*prodEscalar;
+	retorno.r = ip.r*aux*corObjeto.r; 
+	retorno.g = ip.g*aux*corObjeto.g;
+	retorno.b = ip.b*aux*corObjeto.b;
+	
+	return retorno;
+}
+
+Color especular(Ray ray, Light luz, Vector3D lightDir,Intersec intersection){
+
+	Vector3D rVetor = Subv(KProd(2 * ProdEscalar(lightDir,intersection.normal), intersection.normal), lightDir);
+	rVetor = Normalize(rVetor);
+	Vector3D vVetor = KProd(-1, ray.direction);
+	vVetor = Normalize(vVetor);
+	Color especular;
+	float aux = pow(ProdEscalar(rVetor, vVetor), intersection.objeto.coeficienteEspecular);
+	aux = luz.Ip*intersection.objeto.ks*aux;
+	especular.r = luz.color.r*aux;
+	especular.g = luz.color.g*aux;
+	especular.b = luz.color.b*aux;
+    return especular;
+}
+
+
 
 double DistEuclidiana(Point A, Point B){
 	double diffx = A.x - B.x;
@@ -41,6 +89,17 @@ Ray Pixel_CameraRay(int i, int j, Window window, Eye eye){
     ray.direction = Normalize(ray.direction);
     return ray;
 }
+void print_color(Color PixelColor){
+    float r = PixelColor.r;
+    float g = PixelColor.g;
+    float b = PixelColor.b;
+    int ir = static_cast<int>(255.999 * r);
+    int ig = static_cast<int>(255.999 * g);
+    int ib = static_cast<int>(255.999 * b);
+    std::cout << ir << ' ' << ig << ' ' << ib << '\n';
+} 
+
+
 
 Point* intersection(Ray ray,Vertex A, Vertex B, Vertex C){
     Vector3D ab = DefVector(A,B);//(B-A)
@@ -66,46 +125,11 @@ Point* intersection(Ray ray,Vertex A, Vertex B, Vertex C){
     }
     return NULL;
 }
-Object* ClosestObject(Ray ray){
-    Point* ClosestIntersection;
-    Object* ClosestObj;
-    Object CurrentObj;
-    vector<Face> CurrentFaces;
-    double minDist = INT_MAX;
-    for(int i = 0; i< objetos.size(); i++){
-        CurrentObj = objetos.at(i);
-        CurrentFaces = CurrentObj.faces;
-        for (int j=0; j< CurrentFaces.size(); j++){
-            Face f = CurrentFaces.at(j);
-            Vertex* P1 = f.v1;
-            Vertex* P2 = f.v2;
-            Vertex* P3 = f.v3;
-            Point* Intersection = intersection(ray, *P1, *P2, *P3);
-            double d = DistEuclidiana(*Intersection, ray.position);
-            if (d>0 && d<minDist){
-                minDist = d;
-                ClosestObj = &CurrentObj;
-            }
-        }
-    };
-    return ClosestObj;
 
 
-}
 
 
-void print_color(Color PixelColor){
-    float r = PixelColor.r;
-    float g = PixelColor.g;
-    float b = PixelColor.b;
-    int ir = static_cast<int>(255.999 * r);
-    int ig = static_cast<int>(255.999 * g);
-    int ib = static_cast<int>(255.999 * b);
-    std::cout << ir << ' ' << ig << ' ' << ib << '\n';
-} 
-
-
-Vector3D* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
+PointNorm* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
     Vector3D ab = DefVector(A,B);//(B-A)
     Vector3D ac = DefVector(A,C);//(C-A)
     Vector3D bc = DefVector(B,C);//(C-B)
@@ -126,7 +150,7 @@ Vector3D* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
     float d = ProdEscalar(n,pointToVector(A));
     //std::cout << d;
     float t = (d - ProdEscalar(n,pointToVector(ray.position)))/(ProdEscalar(n,ray.direction));
-    static Point Q = vectorToPoint(Sumv(pointToVector(ray.position),KProd(t,ray.direction)));    
+    Point Q = vectorToPoint(Sumv(pointToVector(ray.position),KProd(t,ray.direction)));    
     //Vetor qto = pointToVector(Q);
     if(ProdEscalar(ProdVetorial(ab,DefVector(A,Q)),n) >= 0 && ProdEscalar(ProdVetorial(bc,DefVector(B,Q)),n) >= 0 && ProdEscalar(ProdVetorial(ca,DefVector(C,Q)),n) >= 0){
         Vector3D bq = DefVector(B,Q);//(Q-B)
@@ -145,28 +169,128 @@ Vector3D* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
         Vector3D nc = (ProdVetorial(ca,cb));
         std::cout << nc.x <<" "<< nc.y <<" "<< nc.z<< endl;
         Vector3D auxNQ = Sumv(Sumv(KProd(alpha,na),KProd(beta,nb)),KProd(gama,nc));
-        static Vector3D nq = divisao(auxNQ,auxNQ.Norm());
-        return &nq;
+        Vector3D nq = divisao(auxNQ,auxNQ.Norm());
+        static PointNorm res;
+        res.p = Q;
+        res.normal = nq;
+        return &res;
     }
     return NULL;
 }
 
-
-
-vector<Object> objects;
-int main() {
-    //Carregar os arquivos de entrada
-    /*Cena scene;
-    bool temp = lerCena("cornell_box\\cornellroom.sdl",scene);
-
-    if(temp){
-        std::cout << scene.objetos.size() << std::endl;
-    }else{
-        std::cout << "Não Passou" << std::endl;
+Intersec ClosestObject(Ray ray){
+    Intersec res;
+    Point* ClosestIntersection;
+    Object ClosestObj;
+    Object CurrentObj;
+    vector<Face> CurrentFaces;
+    double minDist = INT_MAX;
+    for(int i=0; i < objetos.size();i++){
+        CurrentObj = objetos.at(i);
+        CurrentFaces = CurrentObj.faces;
+        for(int j=0;j<CurrentFaces.size();j++){
+            Face f = CurrentFaces.at(j);
+            Vertex* P1 = f.v1;
+            Vertex* P2 = f.v2;
+            Vertex* P3 = f.v3;
+            PointNorm* Intersection = barycentricCoord(ray, *P1,*P2,*P3);
+            double d = DistEuclidiana(Intersection->p, ray.position);
+            if (d > 0 && d < minDist){
+                minDist = d;
+                ClosestObj = CurrentObj;
+                res.objeto = CurrentObj;
+                res.p.x = Intersection->p.x;
+                res.p.y = Intersection->p.y;
+                res.p.z = Intersection->p.z;
+                res.normal = Intersection->normal;
+            }
+        }
     }
-    objetos = scene.objetos;
-    std::cout << objetos.at(1).path << std::endl;
-    for (int i = 0; i < scene.objetos.size(); i++)
+    if (minDist != INT_MAX){
+		res.hit = true;
+	}else {
+		res.hit = false;
+	}
+    return res;
+}
+
+float clamp(float x){ return x<0 ? 0 : x>1 ? 1 : x; };
+
+float tColor(float x){ return pow(clamp(x), 1 / 2.2); };
+
+Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int nSample){
+    
+    float bias = 1e-4;
+
+    Intersec intersection = ClosestObject(ray);
+    if (intersection.hit == false){
+        return scene.background;
+    }else if (intersection.objeto.isLight){
+        return luz.color;
+    }
+
+
+    int triangulo = rand() % 2;
+	Face triLuz = objetos.at(0).faces.at(triangulo);
+	double alpha = rand() %100;
+	double beta = rand() % 100;
+	double gama = rand() % 100;
+	double sum = alpha + beta + gama;
+	alpha = alpha / sum;
+	beta = beta / sum;
+	gama = gama / sum;
+
+	Vertex* v1 = triLuz.v1;
+	Vertex* v2 = triLuz.v2;
+	Vertex* v3 = triLuz.v3;
+
+	Point lightRand;
+
+	lightRand.x = alpha*v1->x + beta*v2->x+gama*v3->x;
+	lightRand.y = v1->y;
+	lightRand.z = alpha*v1->z + beta*v2->z + gama*v3->z;
+
+	Vector3D toLight = Normalize(DefVector(intersection.p, vectorToPoint(scene.light.point)));
+	float kd = intersection.objeto.kd, ks = intersection.objeto.ks, kt = intersection.objeto.kt;
+
+    //Rambiente = Ia*kar
+	float iA = scene.ambient;
+	Vector3D ambiente = KProd(iA*intersection.objeto.ka, intersection.objeto.color.toVetor());
+
+	//Rdifuso = Ip*kd(L.N)r
+	Color compDifuso = difuso(luz.color, intersection.objeto.kd, toLight, intersection.normal, intersection.objeto.color);
+
+	//Respecular = Ip*ks*(R.V)^n
+    Color compEspecular = especular(ray, luz, toLight, intersection);
+	/*Vector3D rVetor = Subv(KProd(2 * ProdEscalar(toLight,intersection.normal), intersection.normal), toLight);
+	rVetor = Normalize(rVetor);
+	Vector3D vVetor = KProd(-1, ray.direction);
+	vVetor = Normalize(vVetor);
+	Color especular;
+	float aux = pow(ProdEscalar(rVetor, vVetor), intersection.objeto.coeficienteEspecular);
+	aux = luz.Ip*intersection.objeto.ks*aux;
+	especular.r = luz.color.r*aux;
+	especular.g = luz.color.g*aux;
+	especular.b = luz.color.b*aux;*/
+
+}
+
+
+
+/*
+O verdadeiro main*/
+int main(){
+    Scene scene;
+    bool temp = LoadScene("cornell_box\\cornellroom.sdl",scene);
+    if(temp){
+        std::cout <<"Objetos na cena:"<< scene.objects.size() << std::endl;
+    }else{
+        std::cout << "Não Funcionou" << std::endl;
+    }
+
+    objetos = scene.objects;
+
+    for (int i = 0; i < scene.objects.size(); i++)
 	{
         std::string objPath = "cornell_box\\";
 		//char realPath [100]= "cornel_box\\";
@@ -176,7 +300,48 @@ int main() {
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		objetos.at(i).normalVertice();
 	}
-    std::cout << objetos.at(1).vertices.at(1).z << std::endl;*/
+
+    Color Pixel_Color;
+    for (int j = image_height-1; j >= 0; --j) {
+        for (int i = 0; i < image_width; ++i) {
+            
+            //Pixel_Color = Pegar a Cor do Pixel/Path Tracing
+            print_color(Pixel_Color);
+        }
+    }
+
+}
+
+
+
+void testeLoadScene(Scene scene){
+
+    bool temp = LoadScene("cornell_box\\cornellroom.sdl",scene);
+    if(temp){
+        std::cout <<"Objetos na cena:"<< scene.objects.size() << std::endl;
+    }else{
+        std::cout << "Não Funcionou" << std::endl;
+    }
+    std::cout << "Câmera:" << scene.eye.x << " " << scene.eye.y << " " << scene.eye.z;
+}
+
+void testeLoadObjects(vector<Object> objetos, Scene scene){
+
+    std::cout << objetos.at(1).path << std::endl;
+    for (int i = 0; i < scene.objects.size(); i++)
+	{
+        std::string objPath = "cornell_box\\";
+		//char realPath [100]= "cornel_box\\";
+		//strcat(objPath, objetos.at(i).path);
+        objPath += objetos.at(i).path;
+        std::cout << objPath << std::endl;
+		lerObjeto(objPath.c_str(), objetos.at(i));
+		objetos.at(i).normalVertice();
+	}
+    std::cout << objetos.at(1).vertexs.at(1).z << std::endl;
+}
+
+void testeIntersecao(){
     Ray r;
     Point p;
     p.x = 2;
@@ -199,8 +364,7 @@ int main() {
     C.y=1;
     C.z=1;
     //Point* temp = intersection(r,A,B,C);
-    Vector3D* res = barycentricCoord(r,A,B,C);
+    PointNorm* res = barycentricCoord(r,A,B,C);
     //std::cout << "X: " << temp->x << " Y: " << temp->y << " Z: " << temp->z << std::endl;
-    std::cout << " X: " << res->x << " Y: " << res->y << " Z: " << res->z << std::endl;
-    return 0;
+    //std::cout << " X: " << res->x << " Y: " << res->y << " Z: " << res->z << std::endl;
 }
