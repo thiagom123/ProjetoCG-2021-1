@@ -24,9 +24,9 @@ public:
 
 	void normalVertice(); // Pre-processamento. Calcula e armazena a normal de todos os vertices nas faces
 
-	//Vetor coordBaricentricas(Ponto p, Face f);
+	Vector3D coordBaricentricas(Point p, Face f);
 
-	//Vetor normalPonto(Ponto p, Face f);
+	Vector3D normalPoint(Point p, Face f);
 
 };
 

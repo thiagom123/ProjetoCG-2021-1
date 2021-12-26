@@ -14,8 +14,8 @@ vector<Objeto> objetos;
 //Profundidade máxima de cada path
 //Quantidade de raios secundários permitidos, por path
 const int MAX_DEPTH = 5;
-const int image_width = 256;
-const int image_height = 256;
+const int image_width = 200;
+const int image_height = 200;
 	
 #define M_PI 3.14159265358979323846
 
@@ -34,6 +34,62 @@ struct PointNorm{
     Point p;
     Vector3D normal;
 };
+
+/* a = b - c */
+#define vector(a,b,c) \
+	(a)[0] = (b)[0] - (c)[0];	\
+	(a)[1] = (b)[1] - (c)[1];	\
+	(a)[2] = (b)[2] - (c)[2];
+
+float innerProduct(float* v1, float* v2){
+	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+}
+
+//A x B = (a2b3 - a3b2, a3b1 - a1b3, a1b2 - a2b1); a vector quantity
+void crossProduct(float* result, float* v1, float* v2){
+	result[0] = v1[1] * v2[2] - v1[2] * v2[1];
+	result[1] = v1[2] * v2[0] - v1[0] * v2[2];
+	result[2] = v1[0] * v2[1] - v1[1] * v2[0];
+}
+float rayIntersectsTriangle(float *p, float *d,
+	float *v0, float *v1, float *v2) {
+
+	float e1[3], e2[3], h[3], s[3], q[3];
+	float a, f, u, v, t;
+	vector(e1, v1, v0);
+	vector(e2, v2, v0);
+
+	crossProduct(h, d, e2);
+	a = innerProduct(e1, h);
+    std::cout<< " A: " <<a << std::endl;
+	if (a > -0.00001 && a < 0.00001)
+		return(-1);
+
+	f = 1 / a;
+	vector(s, p, v0);
+	u = f * (innerProduct(s, h));
+    std::cout<< " u: " <<u << std::endl;
+	if (u < 0.0 || u > 1.0)
+		return(-1);
+
+	crossProduct(q, s, e1);
+	v = f * innerProduct(d, q);
+    std::cout<< " v: " <<v << std::endl;
+	if (v < 0.0 || u + v > 1.0)
+		return(-1);
+
+	// at this stage we can compute t to find out where
+	// the intersection point is on the line
+	t = f * innerProduct(e2, q);
+    std::cout<< " t: " <<t << std::endl;
+	if (t > 0.00001) // ray intersection
+		return(t);
+	
+	else // this means that there is a line intersection
+		// but not a ray intersection
+		return (-1);
+
+}
 
 float rand01(){	
     random_device rd;
@@ -83,9 +139,9 @@ Ray Pixel_CameraRay(int i, int j, Window window, Eye eye){
     //Coordenadas x, y e z do pixel e as dimensões x e y da janela
     double x,y,z,SizeWindowX, SizeWindowY;
     SizeWindowX = window.x1 - window.x0;
-    SizeWindowX = window.y1 - window.y0;
-    x = ((float)x / window.sizeX)*SizeWindowX + window.x0;
-	y = ((float)y / window.sizeY)*SizeWindowY + window.y1;
+    SizeWindowX = window.y0 - window.y1;
+    x = ((float)i / window.sizeX)*SizeWindowX + window.x0;
+	y = ((float)j / window.sizeY)*SizeWindowY + window.y1;
 	z = 0;
     //Os Raios partem da câmera
     ray.position.x = eye.x;
@@ -94,8 +150,10 @@ Ray Pixel_CameraRay(int i, int j, Window window, Eye eye){
     //Definido a direção dos raios
     ray.direction.x = x - eye.x;
     ray.direction.y = y - eye.y;
-    ray.direction.x = z - eye.z;
+    ray.direction.z = z - eye.z;
     //Normalizar o vetor da direção
+	std::cout << "DOrigem: " << ray.position.x <<" "<< ray.position.y <<" "<< ray.position.z << endl;
+	std::cout << "DNormal: " << ray.direction.x <<" "<< ray.direction.y <<" "<< ray.direction.z << endl;
     ray.direction = Normalize(ray.direction);
     return ray;
 }
@@ -106,36 +164,8 @@ void print_color(Color PixelColor){
     int ir = static_cast<int>(255.999 * r);
     int ig = static_cast<int>(255.999 * g);
     int ib = static_cast<int>(255.999 * b);
-    std::cout << ir << ' ' << ig << ' ' << ib << '\n';
+    //std::cout << ir << ' ' << ig << ' ' << ib << '\n';
 } 
-
-
-
-Point* intersection(Ray ray,Vertex A, Vertex B, Vertex C){
-    Vector3D ab = DefVector(A,B);//(B-A)
-    Vector3D ac = DefVector(A,C);//(C-A)
-    Vector3D bc = DefVector(B,C);//(C-B)
-    Vector3D ca = DefVector(C,A);//(A-C)
-     //std::cout << ab.x <<" "<< ab.y <<" "<< ab.z;
-     //std::cout << ac.x <<" "<< ac.y <<" "<< ac.z;
-    //Calculating normal for support plane
-    Vector3D vet = ProdVetorial(ab,ac);
-    //std::cout << vet.x <<" "<< vet.y <<" "<< vet.z<< endl;
-    Vector3D n = divisao(vet,vet.Norm());
-    if(ProdEscalar(n,ray.direction) == 0){
-        return NULL;
-    }
-    float d = ProdEscalar(n,pointToVector(A));
-    std::cout << d;
-    float t = (d - ProdEscalar(n,pointToVector(ray.position)))/(ProdEscalar(n,ray.direction));
-    static Point Q = vectorToPoint(Sumv(pointToVector(ray.position),KProd(t,ray.direction)));
-    //Vetor qto = pointToVector(Q);
-    if(ProdEscalar(ProdVetorial(ab,DefVector(A,Q)),n) >= 0 && ProdEscalar(ProdVetorial(bc,DefVector(B,Q)),n) >= 0 && ProdEscalar(ProdVetorial(ca,DefVector(C,Q)),n) >= 0){
-        return &Q;
-    }
-    return NULL;
-}
-
 
 
 
@@ -146,11 +176,15 @@ PointNorm* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
     Vector3D ca = DefVector(C,A);//(A-C)
     Vector3D cb = DefVector(C,B);//(B-C)
     Vector3D ba = DefVector(B,A);//(A-B)
-     //std::cout << ab.x <<" "<< ab.y <<" "<< ab.z;
+	std::cout << "Origem: " << ray.position.x <<" "<< ray.position.y <<" "<< ray.position.z << endl;
+	std::cout << "Normal: " << ray.direction.x <<" "<< ray.direction.y <<" "<< ray.direction.z << endl;
+    std::cout << A.x <<" "<< A.y <<" "<< A.z << endl;
+	std::cout << B.x <<" "<< B.y <<" "<< B.z << endl;
+	std::cout << C.x <<" "<< C.y <<" "<< C.z << endl;
      //std::cout << ac.x <<" "<< ac.y <<" "<< ac.z;
     //Calculating normal for support plane
-    Vector3D vet = ProdVetorial(ab,ac);
-    std::cout << vet.x <<" "<< vet.y <<" "<< vet.z<< endl;
+    Vector3D vet = ProdVetorial(ac,ab);
+    //std::cout << vet.x <<" "<< vet.y <<" "<< vet.z<< endl;
     Vector3D n = divisao(vet,vet.Norm());
     std::cout << n.x <<" "<< n.y <<" "<< n.z << endl;
 
@@ -160,9 +194,14 @@ PointNorm* barycentricCoord(Ray ray,Vertex A, Vertex B, Vertex C){
     float d = ProdEscalar(n,pointToVector(A));
     //std::cout << d;
     float t = (d - ProdEscalar(n,pointToVector(ray.position)))/(ProdEscalar(n,ray.direction));
-    Point Q = vectorToPoint(Sumv(pointToVector(ray.position),KProd(t,ray.direction)));    
+    Point Q = vectorToPoint(Sumv(pointToVector(ray.position),KProd(t,ray.direction)));  
+	std::cout << "Inter: "<< Q.x <<" "<< Q.y <<" " <<Q.z << std::endl;
+	std::cout << " AQ: " << ProdEscalar(ProdVetorial(DefVector(A,Q),ab),n);
+	std::cout << " BQ: " <<ProdEscalar(ProdVetorial(DefVector(B,Q),bc),n);
+	std::cout << " CQ: " <<ProdEscalar(ProdVetorial(DefVector(C,Q),ca),n) << endl;
     //Vetor qto = pointToVector(Q);
-    if(ProdEscalar(ProdVetorial(ab,DefVector(A,Q)),n) >= 0 && ProdEscalar(ProdVetorial(bc,DefVector(B,Q)),n) >= 0 && ProdEscalar(ProdVetorial(ca,DefVector(C,Q)),n) >= 0){
+    if(ProdEscalar(ProdVetorial(DefVector(A,Q),ab),n) >= 0 && ProdEscalar(ProdVetorial(DefVector(B,Q),bc),n) >= 0 && ProdEscalar(ProdVetorial(DefVector(C,Q),ca),n) >= 0){
+        std::cout << "Passou" << std::endl;
         Vector3D bq = DefVector(B,Q);//(Q-B)
         Vector3D cq = DefVector(C,Q);//(Q-C)
         Vector3D aq = DefVector(A,Q);//(Q-A)
@@ -204,16 +243,18 @@ Intersec ClosestObject(Ray ray){
             Vertex* P2 = f.v2;
             Vertex* P3 = f.v3;
             PointNorm* Intersection = barycentricCoord(ray, *P1,*P2,*P3);
-            double d = DistEuclidiana(Intersection->p, ray.position);
-            if (d > 0 && d < minDist){
-                minDist = d;
-                ClosestObj = CurrentObj;
-                res.objeto = CurrentObj;
-                res.p.x = Intersection->p.x;
-                res.p.y = Intersection->p.y;
-                res.p.z = Intersection->p.z;
-                res.normal = Intersection->normal;
-            }
+			if(Intersection){
+				double d = DistEuclidiana(Intersection->p, ray.position);
+				if (d > 0 && d < minDist){
+					minDist = d;
+					ClosestObj = CurrentObj;
+					res.objeto = CurrentObj;
+					res.p.x = Intersection->p.x;
+					res.p.y = Intersection->p.y;
+					res.p.z = Intersection->p.z;
+					res.normal = Intersection->normal;
+				}
+			}
         }
     }
     if (minDist != INT_MAX){
@@ -248,10 +289,11 @@ Vector3D calcularRefracao(float n1, float n2, Vector3D i, Vector3D n){
 
 
 Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int nSample){
-    
+    if (depth >= MAX_DEPTH) return Color(0,0,0);
     float bias = 1e-4;
     Color output;
     Intersec intersection = ClosestObject(ray);
+    //std::cout << "teste" << std::endl;
     if (intersection.hit == false){
         return scene.background;
     }else if (intersection.objeto.isLight){
@@ -259,6 +301,8 @@ Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int n
     }
 
     Vector3D normal = intersection.normal;
+    normal = Normalize(normal);
+
     int triangulo = rand() % 2;
 	Face triLuz = objetos.at(0).faces.at(triangulo);
 	double alpha = rand() %100;
@@ -425,7 +469,7 @@ Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int n
 	output.r = (recursion.r + corLocal.r)*factor;
 	output.g = (recursion.g + corLocal.g)*factor;
 	output.b = (recursion.b + corLocal.b)*factor; 
-
+    std::cout << " RED: " << output.r << std::endl;
 	return output;
 
 }
@@ -454,17 +498,19 @@ int main(){
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		objetos.at(i).normalVertice();
 	}
-
-    Color Pixel_Color;
-    for (int j = image_height-1; j >= 0; --j) {
-        for (int i = 0; i < image_width; ++i) {
+	Color Pixel_Color;
+	Ray ray = Pixel_CameraRay(0, 0, scene.window, scene.eye);
+	Pixel_Color = trace_path(0, ray, scene, scene.light, 0, 0, scene.npaths);
+    /*Color Pixel_Color;
+    for (int j = 0; j < image_height; j++) {
+        for (int i = 0; i < image_width; i++) {
             Ray ray = Pixel_CameraRay(i, j, scene.window, scene.eye);
 
             Pixel_Color = trace_path(0, ray, scene, scene.light, i, j, scene.npaths);
-            cout << "i = "<<i<<"\n";
+            //cout << "i = "<<i<<"\n";
             print_color(Pixel_Color);
         }
-    }
+    }*/
 
 }
 
