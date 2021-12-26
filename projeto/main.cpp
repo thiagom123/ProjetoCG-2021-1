@@ -16,7 +16,8 @@ vector<Objeto> objetos;
 const int MAX_DEPTH = 5;
 const int image_width = 256;
 const int image_height = 256;
-
+	
+#define M_PI 3.14159265358979323846
 
 struct Intersec{
     public:
@@ -33,6 +34,12 @@ struct PointNorm{
     Point p;
     Vector3D normal;
 };
+
+float rand01(){	
+    random_device rd;
+    return ((float)rd()/rd.max());
+	
+}
 
 Color difuso(Color ip, float kd, Vector3D lightDir, Vector3D normal, Color corObjeto){
 
@@ -221,12 +228,29 @@ float clamp(float x){ return x<0 ? 0 : x>1 ? 1 : x; };
 
 float tColor(float x){ return pow(clamp(x), 1 / 2.2); };
 
+bool shadowRay(Ray ray, Scene scene){
+	bool retorno = false;
+	Intersec intersection = ClosestObject(ray);
+	Object closest = intersection.objeto;
+	if (closest.isLight) return false;	
+	if (intersection.hit){
+        retorno = true;
+    }
+	return retorno;
+}
+
+Vector3D calcularRefracao(float n1, float n2, Vector3D i, Vector3D n){
+	float cosI = -ProdEscalar(i, n);
+	float sen2t = pow(n1 / n2, 2)*(1 - pow(cosI, 2));
+	Vector3D t = Sumv(KProd(n1 / n2, i),KProd(((n1 / n2)*cosI - sqrt(1 - sen2t)), n));
+	return t;
+}
+
+
 Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int nSample){
     
     float bias = 1e-4;
-    if(depth>MAX_DEPTH){
-        return Color(0,0,0);
-    }
+    Color output;
     Intersec intersection = ClosestObject(ray);
     if (intersection.hit == false){
         return scene.background;
@@ -234,6 +258,7 @@ Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int n
         return luz.color;
     }
 
+    Vector3D normal = intersection.normal;
     int triangulo = rand() % 2;
 	Face triLuz = objetos.at(0).faces.at(triangulo);
 	double alpha = rand() %100;
@@ -254,29 +279,156 @@ Color trace_path(int depth, Ray ray, Scene scene, Light luz, int i, int j, int n
 	lightRand.y = v1->y;
 	lightRand.z = alpha*v1->z + beta*v2->z + gama*v3->z;
 
-	//Vector3D toLight = Normalize(DefVector(intersection.p, vectorToPoint(scene.light.point)));
-    Vector3D toLight = pointToVector(lightRand);
+	Vector3D toLight = Normalize(DefVector(intersection.p, vectorToPoint(scene.light.point)));
 	float kd = intersection.objeto.kd, ks = intersection.objeto.ks, kt = intersection.objeto.kt;
 
     //Rambiente = Ia*kar
 	float iA = scene.ambient;
-	Color ambiente = KProd(iA*intersection.objeto.ka, intersection.objeto.color.toVetor());
+	Vector3D ambiente = KProd(iA*intersection.objeto.ka, intersection.objeto.color.toVetor());
 
 	//Rdifuso = Ip*kd(L.N)r
-    //TESTAR SEM ESSES COMPONENTES
-	Color compDifuso = difuso(luz.color, intersection.objeto.kd, toLight, intersection.normal, intersection.objeto.color);
+	Color compDifuso = difuso(luz.color, intersection.objeto.kd, toLight, normal, intersection.objeto.color);
 
 	//Respecular = Ip*ks*(R.V)^n
     Color compEspecular = especular(ray, luz, toLight, intersection);
 
-    //SHADOWRAY
+    //Shadow Ray
+	Ray ray2;
+	ray2.direction =  DefVector(intersection.p, lightRand);
 
-    //DIFUSA
-    //ESPECULAR
-    //REFRAÇÃO
+	//Walk a little bit in the normal direction in order to avoid self intersection
+	Vector3D dist = KProd(bias, normal);
+	
+	ray2.position.x = intersection.p.x + dist.x;
+	ray2.position.y = intersection.p.y + dist.y;
+	ray2.position.z = intersection.p.z + dist.z;
+
+	bool sombra = shadowRay(ray2,scene);
+
+	////Definindo o valor da cor local
+	Color corLocal;
+	if (sombra){
+		corLocal.r = 0;
+		corLocal.g = 0;
+		corLocal.b = 0;
+	}else{
+		corLocal = csum(csum(compDifuso, Color(ambiente)), compEspecular);
+	}
+	
+	//Ray cast from the recursion
+	Ray novoRaio;
+	novoRaio.position.x = intersection.p.x;
+	novoRaio.position.y = intersection.p.y;
+	novoRaio.position.z = intersection.p.z;
+
+	// -------------------------recursion for contribution from other objects---------------------------------
+	float ktot = kd + ks + kt;
+	float r = rand01()*ktot;
+	Vector3D direcao, posicao;
+	if (r < kd){
+		// raio difuso
+		float  r1 = 2 * M_PI * rand01();  // random angle around
+		float r2 = rand01();           // random distance from center
+		float r2s = sqrt(r2);          // square root of distance from center
+
+		Vector3D w = normal;           // set first axis equal to normal
+		Vector3D v1;
+		v1.x = 0;
+		v1.y = 1;
+		v1.z = 0;
+		Vector3D v2;
+		v2.x = 1;
+		v2.y = 0;
+		v2.z = 0;
+		Vector3D u = fabs(w.x) > 0.1 ? v1 : v2;
+		u = (Normalize(ProdVetorial(u, w)));      // second axis
+		Vector3D v = ProdVetorial(w, u);          // final axis
+
+		// random direction 
+		Vector3D psi;
+		psi.x = u.x*cos(r1)*r2s + v.x*sin(r1)*r2s + w.x*sqrt(1 - r2);
+		psi.y = u.y*cos(r1)*r2s + v.y*sin(r1)*r2s + w.y*sqrt(1 - r2);
+		psi.z = u.z*cos(r1)*r2s + v.z*sin(r1)*r2s + w.z*sqrt(1 - r2);
+
+		psi = Normalize(psi);
+
+		direcao = psi;
+	}
+	else if (r < kd + ks){
+		// raio especular
+		// direcao: R=2N(NL) - L
+		direcao = Subv(KProd(2 * ProdEscalar(normal, toLight), normal), toLight);
+
+	}
+	else {
+		// raio transmitido
+		// TODO
+		// objeto opaco? nenhuma cor transmitida
+		// caso contrario... verificar refracao
+
+
+		float cos = ProdEscalar(ray.direction, normal);
+		float n1, n2;
+		if (cos > 0){
+			//Inside the object
+			n1 = intersection.objeto.coeficienteRefracao;
+			n2 = 1;
+			direcao = calcularRefracao(n1, n2, ray.direction, KProd(-1, normal));
+			normal = KProd(-1, normal);
+		}
+		else {
+			n1 = 1;
+			n2 = intersection.objeto.coeficienteRefracao;
+			direcao = calcularRefracao(n1, n2, ray.direction, normal);
+		}
+
+		Vector3D dist2 = KProd(bias, normal);
+		novoRaio.position.x = intersection.p.x - dist2.x;
+		novoRaio.position.y = intersection.p.y - dist2.y;
+		novoRaio.position.z = intersection.p.z - dist2.y;
+	}
+
+	// Use the direction and position vector to make a ray
+
+	novoRaio.direction = direcao;
+	novoRaio.direction = Normalize(novoRaio.direction);
+	float cos_theta = ProdEscalar(direcao, normal);
+
+	Color emitance;
+	float auxEmtR = ProdEscalar(normal, toLight)*scene.light.Ip*intersection.objeto.color.r;
+	float auxEmtG = ProdEscalar(normal, toLight)*scene.light.Ip*intersection.objeto.color.g;
+	float auxEmtB = ProdEscalar(normal, toLight)*scene.light.Ip*intersection.objeto.color.b;
+	emitance = Color(auxEmtR, auxEmtG, auxEmtB);
+	
+
+	Color BRDF;
+	BRDF.r = 2 * emitance.r * cos_theta;
+	BRDF.g = 2 * emitance.g * cos_theta;
+	BRDF.b = 2 * emitance.b * cos_theta;
+
+	Color recursion = trace_path(depth + 1, novoRaio, scene, scene.light, i, j, nSample);
+	
+	// -----------------------------------output--------------------------------------
+	//*****Testar diferentes pesos*****
+
+	/*output.r = (recursion.r  + corLocal.r)*kd;
+	output.g = (recursion.g + corLocal.g)*kd;
+	output.b = (recursion.b + corLocal.b)*kd;*/
+	/*
+	output.r = recursion.r*.5 + corLocal.r*.5;
+	output.g = recursion.g*.5 + corLocal.g*.5;
+	output.b = recursion.b *.5 + corLocal.b*.5;
+	*/
+
+	float factor = max(max(kd, ks), kt);
+
+	output.r = (recursion.r + corLocal.r)*factor;
+	output.g = (recursion.g + corLocal.g)*factor;
+	output.b = (recursion.b + corLocal.b)*factor; 
+
+	return output;
 
 }
-
 
 
 /*
@@ -306,8 +458,10 @@ int main(){
     Color Pixel_Color;
     for (int j = image_height-1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
-            
-            //Pixel_Color = Pegar a Cor do Pixel/Path Tracing
+            Ray ray = Pixel_CameraRay(i, j, scene.window, scene.eye);
+
+            Pixel_Color = trace_path(0, ray, scene, scene.light, i, j, scene.npaths);
+            cout << "i = "<<i<<"\n";
             print_color(Pixel_Color);
         }
     }
