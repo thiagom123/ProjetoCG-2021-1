@@ -135,21 +135,19 @@ Color local_color(Object obj, Vector3D hit_normal, Ray ray, Eye eye, float lp){
     return color;
 }
 
-Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye eye){
+Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
 	Color difuso = Cor(0,0,0);
 	Color especular = Cor(0,0,0);
 	Color transmitido = Cor(0,0,0);
-	Color result = Cor(0,0,0);
+	// result = Cor(0,0,0);
 	float lp = 1.0;
-	int temLuz = 1;
-
+	int NShadow_Ray = 9;
 	int dist = 100;
 	int dist2 = 100;
 	int dist3 = 100;
-
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
-
+	float temLuz = 1.0;
 	bool hit = false;
 	Object ClosestObj;
     Object CurrentObj;
@@ -163,9 +161,6 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
             Vertex* P2 = f.v2;
             Vertex* P3 = f.v3;
 			Intersec inter = intersection(ray,*P1,*P2,*P3);
-			/*if(ClosestObj.isLight){
-				lp = ClosestObj.lp;
-			}*/
 			if(inter.hit && inter.distance < dist){
 				dist = inter.distance;
 				ClosestObj = CurrentObj;
@@ -175,118 +170,85 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
 			}
         }
     }
-	if(hit){
-		if(ClosestObj.isLight){
-			return KProdC(lp,ClosestObj.color);
-		}else{
-			if(depth == minDepth){
-				for (int i = 0; i < 9; i++)
-				{
-					float lx = rand01(-0.9100,0.9100);
-					float lz = rand01(-23.3240,-26.4800);
-					Vector3D luz = Normalize(Subv(Vector3D(lx,3.8360,lz),hit_point));
-					Ray shadow_ray2;
-					shadow_ray2.position = vectorToPoint(Vector3D(hit_point.x, hit_point.y, hit_point.z));
-					shadow_ray2.direction = luz;
-					bool hit2 = false;
-					Object ClosestObj2;
-					Object CurrentObj2;
-					vector<Face> CurrentFaces2;
-					for(int i=0; i < objetos.size();i++){
-						CurrentObj2 = objetos.at(i);
-						CurrentFaces2 = CurrentObj.faces;
-						for(int j=0;j<CurrentFaces2.size();j++){
-							Face f2 = CurrentFaces2.at(j);
-							Vertex* P12 = f2.v1;
-							Vertex* P22 = f2.v2;
-							Vertex* P32 = f2.v3;
-							Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
-							/*if(ClosestObj.isLight){
-								lp = ClosestObj.;
-							}*/
-							if(inter2.hit && inter2.distance < dist2){
-								dist2 = inter2.distance;
-								ClosestObj2 = CurrentObj2;
-								hit2 = inter2.hit;
-								temLuz = 0;
-								if(hit2){
-									if(ClosestObj2.isLight){
-										temLuz =1;
-									}
-								}
-							}
-						}
-					}
-					if(temLuz != 0.0){
-						result = local_color(ClosestObj,normal,ray,eye,lp);
-						break;
-					}
-				}
-				
-			}else{
-				result = local_color(ClosestObj, normal, ray, eye, lp);
-			}
-		}
-	}else{
-		return Color(0,0,0);
+	if(hit == false){
+		return scene.background;
 	}
+	
+	if(ClosestObj.isLight){
+			return KProdC(ClosestObj.lp, ClosestObj.color);
+	}
+	//Shadow Ray
+	Color ColorLocal = Color(0,0,0);
+	bool shadow = true;
+	float lpShadow = 0.0;
+	Color ColorShadow 	= Color(0,0,0);
+	//Lança Vários Shadow ray
+	for (int k = 0; k < NShadow_Ray; k++){
+	
+		float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
+		float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z);
+		Vector3D luz = Normalize(Subv(Vector3D(lx,scene.light.point.y,lz),hit_point));
+		Ray shadow_ray2;
+		shadow_ray2.position = vectorToPoint(Vector3D(hit_point.x, hit_point.y, hit_point.z));
+		shadow_ray2.direction = luz;
+		bool hit2 = false;
+		Object ClosestObj2;
+		Object CurrentObj2;
+		Vector3D Normal2;
+		vector<Face> CurrentFaces2;
+		for(int i=0; i < objetos.size();i++){
+			CurrentObj2 = objetos.at(i);
+			CurrentFaces2 = CurrentObj.faces;
+			for(int j=0;j<CurrentFaces2.size();j++){
+				Face f2 = CurrentFaces2.at(j);
+				Vertex* P12 = f2.v1;
+				Vertex* P22 = f2.v2;
+				Vertex* P32 = f2.v3;
+				Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
+				if(inter2.hit && inter2.distance < dist2){
+					dist2 = inter2.distance;
+					ClosestObj2 = CurrentObj2;
+					hit2 = inter2.hit;
+					Normal2 = inter2.normal;
+					//Armazena o objeto mais próximo
+									
+				}
+			}
 
+		}
+		//Se o mais próximo for a luz
+		if(ClosestObj2.isLight){
+			//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
+			float lp2= ClosestObj2.lp;
+			float kd = ClosestObj.kd;
+			float cossenoAng = ProdEscalar(normal, luz);
+			//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
+			ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
+			ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
+			ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);
+			
+		
+		}	
+		
+	}
+	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
+	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
-	Ray shadow_ray;
-	if(depth > 0){
+	if(depth < MaxDepth){
 		if(r < ClosestObj.kd){
 			float x = rand01(0,1);
 			float y = rand01(0,1);
 			Vector3D dir = random_direction(x,y,normal);
-
-			float lx = rand01(-0.9100, 0.9100);
-			float lz = rand01(-23.3240, -26.4880);
-			Vector3D luz = Normalize(Subv(Vector3D(lx,3.8360,lz),dir));
-			shadow_ray.position = vectorToPoint(Vector3D(dir.x, dir.y, dir.z));
-			shadow_ray.direction = luz;
-			bool hit3 = false;
-			Object ClosestObj3;
-			Object CurrentObj3;
-			vector<Face> CurrentFaces3;
-			for (int i = 0; i < objetos.size(); i++)
-			{
-				CurrentObj3 = objetos.at(i);
-				CurrentFaces3 = CurrentObj3.faces;
-				for (int j = 0; j < CurrentFaces3.size(); j++)
-				{
-					Face f2 = CurrentFaces3.at(j);
-					Vertex *P12 = f2.v1;
-					Vertex *P22 = f2.v2;
-					Vertex *P32 = f2.v3;
-					Intersec inter3 = intersection(shadow_ray, *P12, *P22, *P32);
-					/*if(ClosestObj.isLight){
-								lp = ClosestObj.;
-							}*/
-					if (inter3.hit && inter3.distance < dist3)
-					{
-						dist3 = inter3.distance;
-						ClosestObj3 = CurrentObj3;
-						hit3 = inter3.hit;
-						if (hit3)
-						{
-							if (ClosestObj3.isLight)
-							{
-								temLuz = 1;
-							}
-						}
-					}
-				}
-			}
-			if(temLuz ==0){
-				difuso = Color(0,0,0);
-			}else{
-				Ray new_ray;
-				new_ray.position = vectorToPoint(hit_point);
-				new_ray.direction = Normalize(dir);
-				difuso =trace_ray(new_ray,depth -1, ClosestObj.coeficienteRefracao, minDepth, eye);
-			}
-		}else if(r < ClosestObj.kd + ClosestObj.ks){
+			Ray RaioSecundario;
+			//float lx = rand01(-0.9100, 0.9100);
+			//float lz = rand01(-23.3240, -26.4880);
+			//Vector3D luz = Normalize(Subv(Vector3D(lx,3.8360,lz),dir));
+			RaioSecundario.position = vectorToPoint(hit_point);
+			RaioSecundario.direction = dir;
+			difuso = trace_ray(RaioSecundario,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+			
+		}/*else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
 			Vector3D R = KProd(2, (Subv(KProd(ProdEscalar(N,L),N),L))); 
@@ -311,9 +273,9 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
 					Vertex *P22 = f2.v2;
 					Vertex *P32 = f2.v3;
 					Intersec inter3 = intersection(shadow_ray, *P12, *P22, *P32);
-					/*if(ClosestObj.isLight){
+					if(ClosestObj.isLight){
 								lp = ClosestObj.;
-							}*/
+							}
 					if (inter3.hit && inter3.distance < dist3)
 					{
 						dist3 = inter3.distance;
@@ -335,9 +297,12 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
 				Ray new_ray;
 				new_ray.position = vectorToPoint(hit_point);
 				new_ray.direction = Normalize(R);
-				especular =trace_ray(new_ray,depth -1, ClosestObj.coeficienteRefracao, minDepth, eye);
+				especular =trace_ray(new_ray,depth +1, ClosestObj.coeficienteRefracao, minDepth, eye);
 			}
-		}else{
+			*/
+		//}else{
+			//Transmissão
+			/*
 			if (ClosestObj.kt > 0){
 				Vector3D L = Normalize(ray.direction);
 				Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
@@ -380,9 +345,9 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
 							Vertex *P22 = f2.v2;
 							Vertex *P32 = f2.v3;
 							Intersec inter3 = intersection(shadow_ray, *P12, *P22, *P32);
-							/*if(ClosestObj.isLight){
+							if(ClosestObj.isLight){
 										lp = ClosestObj.;
-									}*/
+									}
 							if (inter3.hit && inter3.distance < dist3)
 							{
 								dist3 = inter3.distance;
@@ -404,14 +369,18 @@ Color trace_ray(Ray ray, int depth, float nRefractedInitial, int minDepth, Eye e
 						Ray new_ray;
 						new_ray.position = vectorToPoint(hit_point);
 						new_ray.direction = Normalize(transmitido.toVetor());
-						transmitido =trace_ray(new_ray,depth -1, ClosestObj.coeficienteRefracao, minDepth, eye);
+						transmitido =trace_ray(new_ray,depth +1, ClosestObj.coeficienteRefracao, minDepth, eye);
 					}
 				}
 			}
-		}
+			*/
+			
+		//}
 	}
-	return csum(csum(result,KProdC(ClosestObj.kd,difuso)),csum(KProdC(ClosestObj.ks,especular),KProdC(ClosestObj.kt,transmitido)));
+	Color ColorIndireta = KProdC(ClosestObj.kd, difuso);
+	return csum(ColorDireta, ColorIndireta);
 }
+
 
 void print_color(Color PixelColor){
     float r = PixelColor.r;
@@ -433,7 +402,7 @@ Color Tonemapping(Color pixel, float tmapping){
 		return pixel;
 }
 
-void render(Eye eye, Window window, int npaths, int depth, double tonemapping,int minDepth){
+void render(Eye eye,Scene scene, Window window, int npaths, int depth, double tonemapping,int maxDepth){
         Ray ray;
         ray.position.x = eye.x;
         ray.position.y = eye.y;
@@ -455,7 +424,7 @@ void render(Eye eye, Window window, int npaths, int depth, double tonemapping,in
                     ray.direction = get_direction(eye, window, sampleX, sampleY);
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
-                    colorAux = trace_ray(ray, depth, 1.0, minDepth, eye);
+                    colorAux = trace_ray(ray, scene, depth, 1.0, maxDepth, eye);
 					//std::cout << "TesteDepois" << std::endl;
                     color.r = color.r + colorAux.r;
                     color.g = color.g + colorAux.g;
@@ -497,8 +466,10 @@ int main(){
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		//objetos.at(i).normalVertice();
 	}
-	/*for(int i = 0; i < objetos.size();i++){
+	/*
+	for(int i = 0; i < objetos.size();i++){
 		std::cout << "Objeto: " << i << endl;
+		std::cout << "Cor do objeto: " << objetos.at(i).color.r <<" "<< objetos.at(i).color.g <<" "<< objetos.at(i).color.b << endl;
 		for (int j = 0; j < objetos.at(i).faces.size(); j++){
 			std::cout << "Face: " << j << endl;
 			std::cout << objetos.at(i).faces.at(j).v1->x << " "<<objetos.at(i).faces.at(j).v1->y <<" "<< objetos.at(i).faces.at(j).v1->z << endl;
@@ -536,6 +507,6 @@ int main(){
 		std::cout << "Não Funciona" << std::endl;
 	}*/
 	int depth = mDepth;
-	render(scene.eye,scene.window,10,depth,scene.tonemapping,mDepth);
+	render(scene.eye,scene,scene.window,10,depth,scene.tonemapping,mDepth);
 
 }

@@ -22,7 +22,7 @@ class Light {
 public:
 	Vector3D point;
 	Color color;
-	float Ip;
+	float lp;
 	Object* object;
 };
 

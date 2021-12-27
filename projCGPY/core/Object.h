@@ -20,6 +20,7 @@ public:
 	bool isLight = false;
 	//bool isTexture = false;
 	float coeficienteRefracao;
+	float lp;
 	//Vector3D normal;
 
 	void normalVertice(); // Pre-processamento. Calcula e armazena a normal de todos os vertices nas faces
