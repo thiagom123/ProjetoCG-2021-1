@@ -39,6 +39,7 @@ float rand01(float lo,float hi){
 Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 	Vector3D r = Normalize(ray.direction);
 	Vector3D temp = Normal(A,B,C);
+	//std::cout << "X: " << temp.x << " Y: " << temp.y << " Z: " << temp.z << endl;
 	bool hit = false;
 	float distance = 0.0;
 	Point hit_point;
@@ -46,9 +47,14 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 		return Intersec(hit,distance,hit_point,temp);
 	}
 	Vector3D ray_dir = Normalize(ray.direction);
-	float t = ProdEscalar(temp,DefVector(A,ray.position))/ProdEscalar(ray_dir,temp);
-	hit_point = ray.hitpoint(ray,t);
+	float t = ProdEscalar(temp,DefVector(ray.position,A))/ProdEscalar(ray_dir,temp);
 
+	//float d = ProdEscalar(temp, pointToVector(A));
+
+	//float t = (d - ProdEscalar(temp,pointToVector(ray.position)))/(ProdEscalar(temp,ray.direction));
+	hit_point = ray.hitpoint(ray,t);
+	//std::cout << "X: " << hit_point.x << " Y: " << hit_point.y << " Z: " << hit_point.z << endl;
+	//std::cout << "T: " << t << std::endl;
 	if(t < 0.0001){
 		bool hit = false;
 		float distance = 0.0;
@@ -63,21 +69,27 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
     Vector3D cb = DefVector(C,B);//(B-C)
     Vector3D ba = DefVector(B,A);//(A-B)
 
-	Vector3D C0 = Subv(pointToVector(hit_point),pointToVector(A));
-	Vector3D C1 = Subv(pointToVector(hit_point),pointToVector(B));
-	Vector3D C2 = Subv(pointToVector(hit_point),pointToVector(C));
-
-	if(ProdEscalar(temp,ProdVetorial(vectorAB,C0)) >= 0 && ProdEscalar(temp,ProdVetorial(vectorBC,C1)) >= 0 && ProdEscalar(temp,ProdVetorial(vectorCA,C2)) >= 0){
+	Vector3D C0 = Subv(pointToVector(hit_point),pointToVector(A));//(Q-A)
+	Vector3D C1 = Subv(pointToVector(hit_point),pointToVector(B));//(Q-B)
+	Vector3D C2 = Subv(pointToVector(hit_point),pointToVector(C));//(Q-C)
+	//std::cout << ProdEscalar(temp,ProdVetorial(vectorAB,C0)) << endl;
+	//std::cout << ProdEscalar(temp,ProdVetorial(vectorBC,C1)) << endl;
+	//std::cout << ProdEscalar(temp,ProdVetorial(vectorCA,C2)) << endl;
+	if(ProdEscalar(temp,ProdVetorial(vectorAB,C0)) > 0 && ProdEscalar(temp,ProdVetorial(vectorBC,C1)) > 0 && ProdEscalar(temp,ProdVetorial(vectorCA,C2)) > 0){
+		//std::cout << "Intersecção" << endl;
 		hit = true;
         distance = t;
         hit_point = ray.hitpoint(ray,t);
         return Intersec(hit,distance,hit_point,temp);;
-	}else{
-		bool hit = false;
-		float distance = 0.0;
-		Point hit_point;
-		return Intersec(hit,distance,hit_point,temp);
 	}
+	if(ProdEscalar(temp,ProdVetorial(vectorAB,C0)) < 0 && ProdEscalar(temp,ProdVetorial(vectorBC,C1)) < 0 && ProdEscalar(temp,ProdVetorial(vectorCA,C2)) < 0){
+		//std::cout << "Intersecção" << endl;
+		hit = true;
+        distance = t;
+        hit_point = ray.hitpoint(ray,t);
+        return Intersec(hit,distance,hit_point,temp);;
+	}
+	return Intersec(hit,distance,hit_point,temp);
 }
 
 Color local_color(Object obj, Vector3D hit_normal, Ray ray, Eye eye, float lp){
@@ -117,7 +129,7 @@ Color local_color(Object obj, Vector3D hit_normal, Ray ray, Eye eye, float lp){
 
 	angulo = ProdEscalar(p1,p2);
 
-	lv = KProdC((float(obj.ks) * pow(angulo, float(obj.coeficienteRefracao)) * lp),Color(1,1,1));
+	lv = KProdC((obj.ks * pow(angulo, obj.coeficienteRefracao) * lp),Color(1.0,1.0,1.0));
 	color = csum(color,lv);
 
     return color;
@@ -430,7 +442,8 @@ void render(Eye eye, Window window, int npaths, int depth, double tonemapping,in
         Color color = Color(0,0,0); 
         Color colorAux;
 		//std::cout  <<"npath: " << npaths << std::endl;
-        for (int j = 0; j < window.sizeY; j++) {
+		std::cout << "P3\n" << window.sizeX<< ' ' << window.sizeY << "\n255\n";
+        for (int j = window.sizeY - 1; j >=0 ; j--) {
             for (int i = 0; i < window.sizeX; i++) {
                 color.r = 0;
                 color.g = 0;
@@ -440,6 +453,7 @@ void render(Eye eye, Window window, int npaths, int depth, double tonemapping,in
                     sampleY = (j + rand01(0.0, 1.0)) - (window.sizeY / 2.0);
                     //Tem que implementar essa função aqui
                     ray.direction = get_direction(eye, window, sampleX, sampleY);
+					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
                     colorAux = trace_ray(ray, depth, 1.0, minDepth, eye);
 					//std::cout << "TesteDepois" << std::endl;
@@ -463,24 +477,64 @@ O verdadeiro main*/
 int main(){
     Scene scene;
     bool temp = LoadScene("cornell_box\\cornellroom.sdl",scene);
-    if(temp){
+    /*if(temp){
         std::cout <<"Objetos na cena:"<< scene.objects.size() << std::endl;
     }else{
         std::cout << "Não Funcionou" << std::endl;
-    }
+    }*/
 	scene.eye = compute_uvw(scene.eye);
 	scene.eye.view_dist = view_dist;
     objetos = scene.objects;
+	
+	//std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << "sda" <<scene.seed <<endl;
     for (int i = 0; i < scene.objects.size(); i++)
 	{
         std::string objPath = "cornell_box\\";
 		//char realPath [100]= "cornel_box\\";
 		//strcat(objPath, objetos.at(i).path);
         objPath += objetos.at(i).path;
-        std::cout << objPath << std::endl;
+        //std::cout << objPath << std::endl;
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		//objetos.at(i).normalVertice();
 	}
+	/*for(int i = 0; i < objetos.size();i++){
+		std::cout << "Objeto: " << i << endl;
+		for (int j = 0; j < objetos.at(i).faces.size(); j++){
+			std::cout << "Face: " << j << endl;
+			std::cout << objetos.at(i).faces.at(j).v1->x << " "<<objetos.at(i).faces.at(j).v1->y <<" "<< objetos.at(i).faces.at(j).v1->z << endl;
+			std::cout << objetos.at(i).faces.at(j).v2->x << " "<<objetos.at(i).faces.at(j).v2->y <<" "<< objetos.at(i).faces.at(j).v2->z << endl;
+			std::cout << objetos.at(i).faces.at(j).v3->x << " "<<objetos.at(i).faces.at(j).v3->y <<" "<< objetos.at(i).faces.at(j).v3->z << endl;
+		}
+	}*/
+	/*Ray r;
+    Point p;
+    p.x = 2;
+    p.y= 2;
+    p.z=-3;
+    Vector3D n;
+    n.x = 1;
+    n.y=1;
+    n.z=4;
+    r.position = p;
+    r.direction = n;
+    Vertex A,B,C;
+    A.x = 1;
+    A.y=1;
+    A.z=1;
+
+    B.x = 3;
+    B.y=4;
+    B.z=1;
+
+    C.x = 6;
+    C.y=1;
+    C.z=1;
+	Intersec intae = intersection(r,A,B,C);
+	if(intae.hit){
+		std::cout << "Funciona" << std::endl;
+	}else{
+		std::cout << "Não Funciona" << std::endl;
+	}*/
 	int depth = mDepth;
 	render(scene.eye,scene.window,10,depth,scene.tonemapping,mDepth);
 
