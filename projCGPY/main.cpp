@@ -103,10 +103,10 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color transmitido = Cor(0,0,0);
 	// result = Cor(0,0,0);
 	float lp = 1.0;
-	int NShadow_Ray = 9;
-	int dist = INT_MAX;
-	int dist2 = INT_MAX;
-	int dist3 = INT_MAX;
+	int NShadow_Ray = 4;
+	float dist = 10000000;
+	float dist2 = 10000000;
+	float dist3 = 10000000;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
 	float temLuz = 1.0;
@@ -147,17 +147,25 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float lpShadow = 0.0;
 	Color ColorShadow 	= Color(0,0,0);
 	//Lança Vários Shadow ray
+	float xMin = scene.light.object->vertexs.at(0).x;
+	float xMax = scene.light.object->vertexs.at(2).x;
+	float zMin = scene.light.object->vertexs.at(0).z;
+	float zMax = scene.light.object->vertexs.at(2).z;
+	float ly = scene.light.object->vertexs.at(2).y;
 	bool hit2 = false;
 	for (int k = 0; k < NShadow_Ray; k++){
 	
-		float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
-		float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z);
-		Vector3D luz = Normalize(Subv(Vector3D(lx,scene.light.point.y,lz),hit_point));
+		//float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
+		//float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z);
+		float lx = xMin + (k+0.5)*(xMax-xMin)/NShadow_Ray;
+		float lz = zMin + (k+0.5)*(zMax-zMin)/NShadow_Ray;
+		Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
 		Ray shadow_ray2;
 		shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 		shadow_ray2.direction = luz;
 		//bool hit2 = false;
 		Object ClosestObj2;
+		ClosestObj2.isLight  = true;
 		Object CurrentObj2;
 		Vector3D Normal2;
 		vector<Face> CurrentFaces2;
@@ -188,11 +196,16 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			float lp2= ClosestObj2.lp;
 			float kd = ClosestObj.kd;
 			float cossenoAng = ProdEscalar(normal, luz);
+			if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
 			//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
 			ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
 			ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
 			ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
 		}	
+		//float kd = ClosestObj.kd;
+		//ColorShadow.r += lp*kd*scene.light.color.r/((float)NShadow_Ray);
+		//ColorShadow.g += lp*kd*scene.light.color.g/((float)NShadow_Ray);
+		//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
 		
 	}
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
@@ -220,7 +233,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//Ray new_ray;
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(R);
-			especular =csum(especular,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));		
+			//especular =csum(especular,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));		
 			//new_ray.direction = Subv(KProd(2 * ProdEscalar(normal, pLuz), normal), pLuz);
 			
 		}else{
@@ -253,7 +266,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 					//new_ray.position = vectorToPoint(hit_point);
 					new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 					new_ray.direction = Normalize(transmitido.toVetor());
-					transmitido = csum(transmitido,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+					//transmitido = csum(transmitido,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
 				}
 			}
 		}		
