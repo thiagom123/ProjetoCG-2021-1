@@ -15,7 +15,7 @@
 # define PI           3.14159265358979323846  /* pi */
 const float view_dist = 600.0;
 vector<Objeto> objetos;
-const int mDepth = 5;
+const int mDepth = 7;
 ofstream file;
 struct Intersec
 {
@@ -284,7 +284,10 @@ Color Tonemapping(Color pixel, float tmapping){
 		return pixel;
 }
 
-void render(Eye eye,Scene scene, Window window, int npaths, int depth, double tonemapping,int maxDepth){
+void render(Scene scene,  int npaths, int maxDepth){
+		Eye eye = scene.eye;
+		Window window = scene.window;
+		float tonemapping = scene.tonemapping;
 		file.open("out.ppm");
         Ray ray;
         ray.position.x = eye.x;
@@ -307,7 +310,7 @@ void render(Eye eye,Scene scene, Window window, int npaths, int depth, double to
                     ray.direction = get_direction(eye, window, sampleX, sampleY);
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
-                    colorAux = trace_ray(ray, scene, depth, 1.0, maxDepth, eye);
+                    colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye);
 					//std::cout << "TesteDepois" << std::endl;
                     color.r = color.r + colorAux.r;
                     color.g = color.g + colorAux.g;
@@ -316,7 +319,7 @@ void render(Eye eye,Scene scene, Window window, int npaths, int depth, double to
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                color = Tonemapping(color, tonemapping);
+               // color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
@@ -377,7 +380,8 @@ int main(){
 		}
 	}*/
 	int depth = mDepth;
-	render(scene.eye,scene,scene.window,10,depth,scene.tonemapping,mDepth);
+	int nPaths = 10;
+	render(scene,nPaths,mDepth);
 	file.close();
 	std::cout << "Finalizado" << std::endl; 
 }
