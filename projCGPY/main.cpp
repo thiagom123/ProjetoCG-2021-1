@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <cstring>
+#include <fstream>
+#include <iomanip>
 #include "core\Scene.h"
 #include "core\Object.h"
 #include "core\Point.h"
@@ -10,9 +12,11 @@
 #include "core\Ray.h"
 #include "core\Color.h"
 #include "core\Face.h"
+# define PI           3.14159265358979323846  /* pi */
 const float view_dist = 600.0;
 vector<Objeto> objetos;
 const int mDepth = 5;
+ofstream file;
 struct Intersec
 {
 	public:
@@ -27,7 +31,6 @@ struct Intersec
 		this->normal=normal;
 	}
 };
-
 float rand01(float lo,float hi){	
     std::random_device rd;  // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
@@ -93,6 +96,7 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 }
 
 Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
+	float bias = 1e-4;
 	if (depth > MaxDepth) return Color(0,0,0);
 	Color difuso = Cor(0,0,0);
 	Color especular = Cor(0,0,0);
@@ -100,9 +104,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	// result = Cor(0,0,0);
 	float lp = 1.0;
 	int NShadow_Ray = 9;
-	int dist = 100;
-	int dist2 = 100;
-	int dist3 = 100;
+	int dist = INT_MAX;
+	int dist2 = INT_MAX;
+	int dist3 = INT_MAX;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
 	float temLuz = 1.0;
@@ -135,28 +139,31 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	if(ClosestObj.isLight){
 			return KProdC(ClosestObj.lp, ClosestObj.color);
 	}
+
+
 	//Shadow Ray
 	Color ColorLocal = Color(0,0,0);
 	bool shadow = true;
 	float lpShadow = 0.0;
 	Color ColorShadow 	= Color(0,0,0);
 	//Lança Vários Shadow ray
+	bool hit2 = false;
 	for (int k = 0; k < NShadow_Ray; k++){
 	
 		float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
 		float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z);
 		Vector3D luz = Normalize(Subv(Vector3D(lx,scene.light.point.y,lz),hit_point));
 		Ray shadow_ray2;
-		shadow_ray2.position = vectorToPoint(Vector3D(hit_point.x, hit_point.y, hit_point.z));
+		shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 		shadow_ray2.direction = luz;
-		bool hit2 = false;
+		//bool hit2 = false;
 		Object ClosestObj2;
 		Object CurrentObj2;
 		Vector3D Normal2;
 		vector<Face> CurrentFaces2;
 		for(int i=0; i < objetos.size();i++){
 			CurrentObj2 = objetos.at(i);
-			CurrentFaces2 = CurrentObj.faces;
+			CurrentFaces2 = CurrentObj2.faces;
 			for(int j=0;j<CurrentFaces2.size();j++){
 				Face f2 = CurrentFaces2.at(j);
 				Vertex* P12 = f2.v1;
@@ -168,6 +175,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 					ClosestObj2 = CurrentObj2;
 					hit2 = inter2.hit;
 					Normal2 = inter2.normal;
+					//Normal2 = KProd(bias,inter2.normal);
 					//Armazena o objeto mais próximo
 									
 				}
@@ -183,9 +191,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
 			ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
 			ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
-			ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);
-			
-		
+			ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
 		}	
 		
 	}
@@ -193,28 +199,29 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
+
+	Ray new_ray;
 	if(depth < MaxDepth){
 		if(r < ClosestObj.kd){
 			float x = rand01(0,1);
 			float y = rand01(0,1);
 			Vector3D dir = random_direction(x,y,normal);
-			Ray RaioSecundario;
+			//Ray RaioSecundario;
 			//float lx = rand01(-0.9100, 0.9100);
 			//float lz = rand01(-23.3240, -26.4880);
 			//Vector3D luz = Normalize(Subv(Vector3D(lx,3.8360,lz),dir));
-			RaioSecundario.position = vectorToPoint(hit_point);
-			RaioSecundario.direction = dir;
-			difuso = trace_ray(RaioSecundario,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
-			
+			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
+			new_ray.direction = Normalize(dir);
+			difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
 		}else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
 			Vector3D R = KProd(2, (Subv(KProd(ProdEscalar(N,L),N),L))); 
-			Ray new_ray;
-			new_ray.position = vectorToPoint(hit_point);
+			//Ray new_ray;
+			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(R);
-			//especular =trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);			
-			
+			especular =csum(especular,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));		
+			//new_ray.direction = Subv(KProd(2 * ProdEscalar(normal, pLuz), normal), pLuz);
 			
 		}else{
 			//Transmissão
@@ -242,16 +249,14 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 						transmitido = Sumv(KProd(div,L),KProd((div*cos1)+cos2,N));
 					}
 				
-					Ray new_ray;
-					new_ray.position = vectorToPoint(hit_point);
+					//Ray new_ray;
+					//new_ray.position = vectorToPoint(hit_point);
+					new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 					new_ray.direction = Normalize(transmitido.toVetor());
-					//transmitido =trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+					transmitido = csum(transmitido,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
 				}
 			}
-		}
-			
-			
-		
+		}		
 	}
 	Color ColorIndireta = KProdC(ClosestObj.kd, difuso);
 	return csum(ColorDireta, ColorIndireta);
@@ -265,7 +270,8 @@ void print_color(Color PixelColor){
     int ir = static_cast<int>(255.999 * r);
     int ig = static_cast<int>(255.999 * g);
     int ib = static_cast<int>(255.999 * b);
-    std::cout << ir << ' ' << ig << ' ' << ib << '\n';
+	file << ir << ' ' << ig << ' ' << ib << '\n';
+    //std::cout << ir << ' ' << ig << ' ' << ib << '\n';
 }
 
 Color Tonemapping(Color pixel, float tmapping){
@@ -279,6 +285,7 @@ Color Tonemapping(Color pixel, float tmapping){
 }
 
 void render(Eye eye,Scene scene, Window window, int npaths, int depth, double tonemapping,int maxDepth){
+		file.open("out.ppm");
         Ray ray;
         ray.position.x = eye.x;
         ray.position.y = eye.y;
@@ -287,7 +294,7 @@ void render(Eye eye,Scene scene, Window window, int npaths, int depth, double to
         Color color = Color(0,0,0); 
         Color colorAux;
 		//std::cout  <<"npath: " << npaths << std::endl;
-		std::cout << "P3\n" << window.sizeX<< ' ' << window.sizeY << "\n255\n";
+		file << "P3\n" << window.sizeX<< ' ' << window.sizeY << "\n255\n";
         for (int j = window.sizeY - 1; j >=0 ; j--) {
             for (int i = 0; i < window.sizeX; i++) {
                 color.r = 0;
@@ -309,11 +316,26 @@ void render(Eye eye,Scene scene, Window window, int npaths, int depth, double to
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                //color = Tonemapping(color, tonemapping);
+                color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
-			//std::cout << ((x / self.width) * 100, "%") << std::endl;
+			//std::cout << (((window.sizeX - j) / window.sizeX) * 100) << std::setw(10) << "%" << std::endl;
+			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << std::right << std::setw(5) << "%" << std::endl;
+			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << "%" << std::endl;
+			std::cout << "[";
+			int pos = window.sizeX * ((window.sizeX - j) / window.sizeX);
+			for (int i = 0; i < window.sizeX; ++i) {
+				if (i < pos) std::cout << "=";
+				else if (i == pos) std::cout << ">";
+				else std::cout << " ";
+			}
+			std::cout << "] " << int(((window.sizeX - j) / window.sizeX) * 100.0) << " %\r";
+			if(j >0){
+				std::cout.flush();
+			}else{
+				std::cout << std::endl;
+			}
         }
 }
 
@@ -356,5 +378,6 @@ int main(){
 	}*/
 	int depth = mDepth;
 	render(scene.eye,scene,scene.window,10,depth,scene.tonemapping,mDepth);
-
+	file.close();
+	std::cout << "Finalizado" << std::endl; 
 }
