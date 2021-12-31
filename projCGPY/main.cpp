@@ -103,7 +103,8 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color transmitido = Cor(0,0,0);
 	// result = Cor(0,0,0);
 	float lp = 1.0;
-	int NShadow_Ray = 4;
+	int RaizNShadow_Ray = 2;
+	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
 	float dist = 10000000;
 	float dist2 = 10000000;
 	float dist3 = 10000000;
@@ -147,18 +148,25 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float lpShadow = 0.0;
 	Color ColorShadow 	= Color(0,0,0);
 	//Lança Vários Shadow ray
-	float xMin = scene.light.object->vertexs.at(0).x;
-	float xMax = scene.light.object->vertexs.at(2).x;
-	float zMin = scene.light.object->vertexs.at(0).z;
-	float zMax = scene.light.object->vertexs.at(2).z;
+	float xMin = objetos.at(0).vertexs.at(0).x;
+	float xMax = objetos.at(0).vertexs.at(2).x;
+	float zMin = objetos.at(0).vertexs.at(2).z;
+	float zMax = objetos.at(0).vertexs.at(0).z;
 	float ly = scene.light.object->vertexs.at(2).y;
 	bool hit2 = false;
 	for (int k = 0; k < NShadow_Ray; k++){
 	
 		//float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
-		//float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z);
-		float lx = xMin + (k+0.5)*(xMax-xMin)/NShadow_Ray;
-		float lz = zMin + (k+0.5)*(zMax-zMin)/NShadow_Ray;
+		//float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z); 
+		int kx = k%RaizNShadow_Ray;
+		int kz = floor(k/RaizNShadow_Ray);
+		//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
+		float lx = xMin + (kx+0.5)*(xMax-xMin)/RaizNShadow_Ray;
+		float lz = zMin + (kz+0.5)*(zMax-zMin)/RaizNShadow_Ray;
+		//std::cout<< "x:" << " " << xMin << " " << xMax<<endl;
+		//std::cout<< "z:" << " " << zMin << " " << zMax<<endl;
+		//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
+		//std::cout << "lx::"<<lx << " "<<"lz:"<< lz <<endl;
 		Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
 		Ray shadow_ray2;
 		shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
@@ -166,6 +174,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		//bool hit2 = false;
 		Object ClosestObj2;
 		ClosestObj2.isLight  = true;
+		//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 		Object CurrentObj2;
 		Vector3D Normal2;
 		vector<Face> CurrentFaces2;
@@ -190,10 +199,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			}
 
 		}
+		//std::cout << ClosestObj2.isLight <<endl;
 		//Se o mais próximo for a luz
 		if(ClosestObj2.isLight){
 			//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
-			float lp2= ClosestObj2.lp;
+			float lp2= scene.light.lp;
 			float kd = ClosestObj.kd;
 			float cossenoAng = ProdEscalar(normal, luz);
 			if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
@@ -208,8 +218,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
 		
 	}
+	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
 	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
+	//std::cout<<"Color:" << " "<<ColorDireta.r << " " <<ColorDireta.g << " "<<ColorDireta.b <<endl;
+	//return ColorDireta;
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
 
@@ -332,7 +345,7 @@ void render(Scene scene,  int npaths, int maxDepth){
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-               // color = Tonemapping(color, tonemapping);
+                color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
