@@ -1,0 +1,5 @@
+
+*.json
+*.exe
+projCGPY/main.exe
+projCGPY/.vscode/settings.json
