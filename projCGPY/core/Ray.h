@@ -8,10 +8,6 @@ class Ray{
 		Point position;
 		Vector3D direction;
 
-		/*Point PointAtT(double t) {
-			//return SomarComVetor(position, t*direction);
-		}*/
-
 	Point hitpoint(Ray ray,double t);	
         
 };

@@ -74,33 +74,8 @@ Vector3D Normal(Vertex A ,Vertex B, Vertex C){
 	return Normalize(normal);
 }
 
-/*Vector3D calcularNormal(Vertex* p1, Vertex* p2, Vertex* p3){
-	Vector3D vetor1;
-	Vector3D vetor2;
-	vetor1.x = p3->x - p1->x;
-	vetor1.x = p3->y - p1->y;
-	vetor1.x = p3->z - p1->z;
-
-	vetor2.x = p2->x - p1->x;
-	vetor2.y = p2->y - p1->y;
-	vetor2.z = p2->z - p1->z;
-
-	return ProdVetorial(vetor1, vetor2);
-}*/
 
 
-Color tonemapping(Color pixel, float tmapping){
-	//if 0.9999 < pixel.r > 1.0001 :
-        pixel.r = pixel.r / (pixel.r + tmapping);
-
-    //if 0.9999 < pixel.g > 1.0001 :
-        pixel.g = pixel.g / (pixel.g + tmapping);
-
-    //if 0.9999 < pixel.b > 1.0001 :
-        pixel.b = pixel.b / (pixel.b + tmapping);
-
-		return pixel;
-}
 
 // Soma de vetores
 Vector3D Sumv(Vector3D v1, Vector3D v2){

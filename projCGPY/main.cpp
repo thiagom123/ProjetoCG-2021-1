@@ -75,6 +75,7 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 	Vector3D C0 = Subv(pointToVector(hit_point),pointToVector(A));//(Q-A)
 	Vector3D C1 = Subv(pointToVector(hit_point),pointToVector(B));//(Q-B)
 	Vector3D C2 = Subv(pointToVector(hit_point),pointToVector(C));//(Q-C)
+	//Vector3D VecNormalEmQ =  
 	//std::cout << ProdEscalar(temp,ProdVetorial(vectorAB,C0)) << endl;
 	//std::cout << ProdEscalar(temp,ProdVetorial(vectorBC,C1)) << endl;
 	//std::cout << ProdEscalar(temp,ProdVetorial(vectorCA,C2)) << endl;
@@ -101,8 +102,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color difuso = Cor(0,0,0);
 	Color especular = Cor(0,0,0);
 	Color transmitido = Cor(0,0,0);
-	// result = Cor(0,0,0);
-	float lp = 1.0;
+	float lp = scene.light.lp;
 	int RaizNShadow_Ray = 2;
 	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
 	float dist = 10000000;
@@ -154,6 +154,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float zMax = objetos.at(0).vertexs.at(0).z;
 	float ly = scene.light.object->vertexs.at(2).y;
 	bool hit2 = false;
+	/*
 	if(depth == 0 ){
 		for (int k = 0; k < NShadow_Ray; k++){
 		
@@ -220,6 +221,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			
 		}
 	}
+	*/
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
 	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
@@ -241,11 +243,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+			//difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
 			//Tem que multiplicar pela cor do objeto
-			difuso.r = difuso.r*ClosestObj.color.r;
-			difuso.b = difuso.r*ClosestObj.color.b;
-			difuso.g = difuso.r*ClosestObj.color.g;
+			//difuso.r = difuso.r*ClosestObj.color.r;
+			//difuso.b = difuso.b*ClosestObj.color.b;
+			//difuso.g = difuso.g*ClosestObj.color.g;
 		}else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
@@ -352,7 +354,7 @@ void render(Scene scene,  int npaths, int maxDepth){
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                color = Tonemapping(color, tonemapping);
+                //color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
@@ -390,7 +392,7 @@ int main(){
 	scene.eye.view_dist = view_dist;
     objetos = scene.objects;
 	
-	//std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << "sda" <<scene.seed <<endl;
+	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << " seed " <<scene.seed <<endl;
     for (int i = 0; i < scene.objects.size(); i++)
 	{
         std::string objPath = "cornell_box\\";
@@ -411,10 +413,17 @@ int main(){
 			std::cout << objetos.at(i).faces.at(j).v2->x << " "<<objetos.at(i).faces.at(j).v2->y <<" "<< objetos.at(i).faces.at(j).v2->z << endl;
 			std::cout << objetos.at(i).faces.at(j).v3->x << " "<<objetos.at(i).faces.at(j).v3->y <<" "<< objetos.at(i).faces.at(j).v3->z << endl;
 		}
-	}*/
-	int depth = mDepth;
-	int nPaths = 10;
-	render(scene,nPaths,mDepth);
+	}
+	*/
+	Vector3D normal = Vector3D(-1,0,0);
+	for (int a=0; a< 100; a++){
+		float x = rand01(0,1);
+		float y = rand01(0,1);
+		Vector3D dir = random_direction(x,y,normal);
+		std::cout<< dir.x << " " << dir.y << " " << dir.z<<endl;
+	}
+	int nPaths = 20;
+	//render(scene,nPaths,mDepth);
 	file.close();
 	std::cout << "Finalizado" << std::endl; 
 }

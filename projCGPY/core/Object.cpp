@@ -14,7 +14,6 @@ bool lerObjeto(const char* path, Objeto &objeto){
 		return false;
 	}
 	
-	float gx = INT_MIN, lx = INT_MAX, gy = INT_MIN, ly = INT_MAX, gz = INT_MIN, lz = INT_MAX;
 
 
 	while (1){
@@ -33,12 +32,6 @@ bool lerObjeto(const char* path, Objeto &objeto){
 			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
 			objeto.vertexs.push_back(vertex);
 
-			if (vertex.x > gx) gx = vertex.x;
-			if (vertex.x < lx) lx = vertex.x;
-			if (vertex.y > gy) gy = vertex.y;
-			if (vertex.y < ly) ly = vertex.y;
-			if (vertex.z > gz) gz = vertex.z;
-			if (vertex.z < lz) lz = vertex.z;
 		}
 		else if (strcmp(lineHeader, "f") == 0){
 			std::string vertex1, vertex2, vertex3;
@@ -68,7 +61,6 @@ bool lerObjeto(const char* path, Objeto &objeto){
 		currentFace.v3 = &objeto.vertexs.at(currentFace.v3Index - 1);
 	}
 
-	//objeto.boundingBox.fill(gx, lx, gy, ly, gz, lz);
 
 	return true;
 }

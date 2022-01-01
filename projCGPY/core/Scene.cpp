@@ -61,8 +61,7 @@ bool LoadScene(const char* path, Scene &Scene){
 		}
 		else if (strcmp(lineHeader, "light") == 0){
 			Object o;
-
-			//ACHO QUE NÃO PRECISA DAS COORDENADAS X AQUI		
+		
 			fscanf(file, "%s %f %f %f %f\n", &o.path, &Scene.light.color.r, &Scene.light.color.g, &Scene.light.color.b, &Scene.light.lp);			
 			Scene.light.object = &o;
 			o.isLight = true;
