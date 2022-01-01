@@ -102,7 +102,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color especular = Cor(0,0,0);
 	Color transmitido = Cor(0,0,0);
 	float lp = scene.light.lp;
-	int RaizNShadow_Ray = 4;
+	int RaizNShadow_Ray = 3;
 	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
 	float dist = 10000000;
 	float dist2 = 10000000;
@@ -151,10 +151,10 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float xMax = objetos.at(0).vertexs.at(2).x;
 	float zMin = objetos.at(0).vertexs.at(2).z;
 	float zMax = objetos.at(0).vertexs.at(0).z;
-	float ly = scene.light.object->vertexs.at(2).y;
+	float ly = objetos.at(0).vertexs.at(0).y;
 	bool hit2 = false;
 	
-	if(depth == 0 ){
+	//if(depth == 0 ){
 		for (int k = 0; k < NShadow_Ray; k++){
 			int kx = k%RaizNShadow_Ray;
 			int kz = floor(k/RaizNShadow_Ray);
@@ -164,7 +164,10 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//std::cout<< "x:" << " " << xMin << " " << xMax<<endl;
 			//std::cout<< "z:" << " " << zMin << " " << zMax<<endl;
 			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
-			//std::cout << "lx::"<<lx << " "<<"lz:"<< lz <<endl;
+			//std::cout << "lx:: "<<lx << " ly:"<< ly <<" lz:"<< lz <<endl;
+			lx = 0;
+			ly = 3.8360;
+			lz = -24.906;
 			Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
@@ -216,7 +219,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
 			
 		}
-	}
+	//}
 	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
@@ -345,7 +348,7 @@ void render(Scene scene,  int npaths, int maxDepth){
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                color = Tonemapping(color, tonemapping);
+                //color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
@@ -394,6 +397,7 @@ int main(){
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		//objetos.at(i).normalVertice();
 	}
+	scene.light.object = &objetos.at(0);
 	/*
 	for(int i = 0; i < objetos.size();i++){
 		std::cout << "Objeto: " << i << endl;
