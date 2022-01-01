@@ -16,11 +16,7 @@
 # define PI           3.14159265358979323846  /* pi */
 const float view_dist = 600.0;
 vector<Objeto> objetos;
-struct coordMatrix{
-	int i;
-	int j;
-};
-map<coordMatrix, Color> LightPaths;
+map<std::pair<int,int>, Color> LightPaths;
 const int mDepth = 7;
 ofstream file;
 struct Intersec
@@ -293,10 +289,103 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color ColorIndireta = KProdC(ClosestObj.kd, difuso);
 	return csum(ColorDireta, ColorIndireta);
 }
+struct LightPathAux
+{
+	Color color;
+	int i;
+	int j;
+	bool hit;
+};
 
-void CalculateLightPath(int npaths, int maxDepth){
-	//Direção aleatória da Luz, em apenas UM HEMISFÉRIO
-	//Pegar o raio e fazer que nem o path tracer
+
+LightPathAux TraceLightPath(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
+	float bias = 1e-4;
+	LightPathAux aux;
+	aux.color = Color(0,0,0);
+	//Tem que ter alguma forma de checar se b
+	aux.i = 0;
+	aux.j= 0;
+	aux.hit = false;
+	if (depth > MaxDepth) return aux;
+	Color difuso = Cor(0,0,0);
+	Color especular = Cor(0,0,0);
+	Color transmitido = Cor(0,0,0);
+	// result = Cor(0,0,0);
+	float lp = 1.0;
+	int RaizNShadow_Ray = 2;
+	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
+	float dist = 10000000;
+	float dist2 = 10000000;
+	float dist3 = 10000000;
+	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
+    Vector3D normal = Vector3D(0.0, 0.0, 0.0);
+	float temLuz = 1.0;
+	bool hit = false;
+	Object ClosestObj;
+    Object CurrentObj;
+	vector<Face> CurrentFaces;
+	for(int i=0; i < objetos.size();i++){
+        CurrentObj = objetos.at(i);
+        CurrentFaces = CurrentObj.faces;
+        for(int j=0;j<CurrentFaces.size();j++){
+            Face f = CurrentFaces.at(j);
+            Vertex* P1 = f.v1;
+            Vertex* P2 = f.v2;
+            Vertex* P3 = f.v3;
+			Intersec inter = intersection(ray,*P1,*P2,*P3);
+			if(inter.hit && inter.distance < dist){
+				dist = inter.distance;
+				ClosestObj = CurrentObj;
+				hit = inter.hit;
+				hit_point = pointToVector(inter.hit_point);
+				normal = inter.normal;
+			}
+        }
+    }
+	if(hit == false){
+		return aux;
+	}
+	//Tem que checar se é a camera
+	if(ClosestObj.isLight){
+
+			return KProdC(ClosestObj.lp, ClosestObj.color);
+	}
+	//Se atingiu um objeto que não seja a câmetra: fazer recursão
+	Ray new_ray;
+	float x = rand01(0,1);
+	float y = rand01(0,1);
+	Vector3D dir = random_direction(x,y,normal);
+	new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
+	new_ray.direction = Normalize(dir);
+	difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+}
+
+void CalculateLightPath(Scene scene, int nPaths ,int MaxDepth){
+	//
+	int sizeX = scene.window.sizeX;
+	int sizeY = scene.window.sizeY;
+	int n = nPaths*sizeX*sizeY;
+	Ray ray;
+	float x, y;
+	Vector3D normal = Vector3D(0,0,-1);
+	for(int i = 0; i<n; i++){
+		//Criar direção aleatória para a luz
+
+		float x = rand01(0,1);
+		float y = rand01(0,1);
+		Vector3D dir = random_direction(x,y,normal);
+		ray.direction=dir;
+		ray.position.x = objetos.at(0).vertexs.at(0).x;
+		ray.position.y = objetos.at(0).vertexs.at(0).y;
+		ray.position.z = objetos.at(0).vertexs.at(0).z;
+		LightPathAux aux;
+		aux = TraceLightPath(ray, scene, 0, 1.0, mDepth, scene.eye);
+		//Igualar o map
+
+	}
+	
+				
+	
 }
 void print_color(Color PixelColor){
     float r = PixelColor.r;
@@ -391,7 +480,6 @@ int main(){
 	scene.eye = compute_uvw(scene.eye);
 	scene.eye.view_dist = view_dist;
     objetos = scene.objects;
-	
 	//std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << "sda" <<scene.seed <<endl;
     for (int i = 0; i < scene.objects.size(); i++)
 	{
@@ -416,7 +504,12 @@ int main(){
 	}*/
 
 	int nPaths = 10;
-	CalculateLightPath(nPaths, mDepth);
+	for(int i=0; i< scene.window.sizeX; i++){
+		for(int j=0; j<scene.window.sizeY; i++){
+			//Adicionar elementos nulos no mapa para cada (i,j) da tela
+		}
+	}
+	CalculateLightPath(scene, nPaths, mDepth);
 	render(scene,nPaths,mDepth);
 	file.close();
 	std::cout << "Finalizado" << std::endl; 
