@@ -99,11 +99,10 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
 	float bias = 1e-4;
 	if (depth > MaxDepth) return Color(0,0,0);
-	Color difuso = Cor(0,0,0);
 	Color especular = Cor(0,0,0);
 	Color transmitido = Cor(0,0,0);
 	float lp = scene.light.lp;
-	int RaizNShadow_Ray = 2;
+	int RaizNShadow_Ray = 4;
 	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
 	float dist = 10000000;
 	float dist2 = 10000000;
@@ -154,12 +153,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float zMax = objetos.at(0).vertexs.at(0).z;
 	float ly = scene.light.object->vertexs.at(2).y;
 	bool hit2 = false;
-	/*
+	
 	if(depth == 0 ){
 		for (int k = 0; k < NShadow_Ray; k++){
-		
-			//float lx = rand01(scene.light.object->vertexs.at(0).x, scene.light.object->vertexs.at(2).x);
-			//float lz = rand01(scene.light.object->vertexs.at(0).z, scene.light.object->vertexs.at(2).z); 
 			int kx = k%RaizNShadow_Ray;
 			int kz = floor(k/RaizNShadow_Ray);
 			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
@@ -221,7 +217,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			
 		}
 	}
-	*/
+	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
 	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
@@ -229,25 +225,21 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	//return ColorDireta;
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
-
+	Color ColorIndireto;
 	Ray new_ray;
 	if(depth < MaxDepth){
 		if(r < ClosestObj.kd){
 			float x = rand01(0,1);
 			float y = rand01(0,1);
 			Vector3D dir = random_direction(x,y,normal);
-			//Ray RaioSecundario;
-			//float lx = rand01(-0.9100, 0.9100);
-			//float lz = rand01(-23.3240, -26.4880);
-			//Vector3D luz = Normalize(Subv(Vector3D(lx,3.8360,lz),dir));
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			//difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
 			//Tem que multiplicar pela cor do objeto
-			//difuso.r = difuso.r*ClosestObj.color.r;
-			//difuso.b = difuso.b*ClosestObj.color.b;
-			//difuso.g = difuso.g*ClosestObj.color.g;
+			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
+			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
+			ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kd;
 		}else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
@@ -293,8 +285,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			}
 		}		
 	}
-	Color ColorIndireta = KProdC(ClosestObj.kd, difuso);
-	return csum(ColorDireta, ColorIndireta);
+	return csum(ColorDireta, ColorIndireto);
 }
 
 
@@ -354,7 +345,7 @@ void render(Scene scene,  int npaths, int maxDepth){
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                //color = Tonemapping(color, tonemapping);
+                color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
@@ -415,15 +406,16 @@ int main(){
 		}
 	}
 	*/
+/*
 	Vector3D normal = Vector3D(-1,0,0);
 	for (int a=0; a< 100; a++){
 		float x = rand01(0,1);
 		float y = rand01(0,1);
 		Vector3D dir = random_direction(x,y,normal);
 		std::cout<< dir.x << " " << dir.y << " " << dir.z<<endl;
-	}
+	}*/
 	int nPaths = 20;
-	//render(scene,nPaths,mDepth);
+	render(scene,nPaths,mDepth);
 	file.close();
 	std::cout << "Finalizado" << std::endl; 
 }
