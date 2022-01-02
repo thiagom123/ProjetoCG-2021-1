@@ -309,19 +309,12 @@ LightPathAux TraceLightPath(Ray ray, Scene scene, int depth, float nRefractedIni
 	aux.j= 0;
 	aux.hit = false;
 	if (depth > MaxDepth) return aux;
-	Color difuso = Cor(0,0,0);
-	Color especular = Cor(0,0,0);
-	Color transmitido = Cor(0,0,0);
+	Color res = Color(0,0,0);
 	// result = Cor(0,0,0);
 	float lp = 1.0;
-	int RaizNShadow_Ray = 2;
-	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
 	float dist = 10000000;
-	float dist2 = 10000000;
-	float dist3 = 10000000;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
-	float temLuz = 1.0;
 	bool hit = false;
 	Object ClosestObj;
     Object CurrentObj;
@@ -348,10 +341,11 @@ LightPathAux TraceLightPath(Ray ray, Scene scene, int depth, float nRefractedIni
 		return aux;
 	}
 	//Tem que checar se é a camera
-	if(ClosestObj.isLight){
+	//if(ClosestObj.isLight){
 
-			return KProdC(ClosestObj.lp, ClosestObj.color);
-	}
+	//		aux.color = KProdC(ClosestObj.lp, ClosestObj.color);
+	//		aux.hit = true;
+	//}
 	//Se atingiu um objeto que não seja a câmetra: fazer recursão
 	Ray new_ray;
 	float x = rand01(0,1);
@@ -359,7 +353,11 @@ LightPathAux TraceLightPath(Ray ray, Scene scene, int depth, float nRefractedIni
 	Vector3D dir = random_direction(x,y,normal);
 	new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 	new_ray.direction = Normalize(dir);
-	difuso = csum(difuso,trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+	aux = TraceLightPath(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+	aux.color.r = aux.color.r*ClosestObj.color.r*ClosestObj.kd;
+	aux.color.b = aux.color.b*ClosestObj.color.b*ClosestObj.kd;
+	aux.color.g = aux.color.g*ClosestObj.color.g*ClosestObj.kd;
+	return aux;
 }
 
 void CalculateLightPath(Scene scene, int nPaths ,int MaxDepth){
@@ -377,9 +375,13 @@ void CalculateLightPath(Scene scene, int nPaths ,int MaxDepth){
 		float y = rand01(0,1);
 		Vector3D dir = random_direction(x,y,normal);
 		ray.direction=dir;
-		ray.position.x = objetos.at(0).vertexs.at(0).x;
-		ray.position.y = objetos.at(0).vertexs.at(0).y;
-		ray.position.z = objetos.at(0).vertexs.at(0).z;
+		//Estão todos saindo do mesmo vértice
+		float lx = 0;
+		float ly = 3.8360;
+		float lz = -24.906;
+		ray.position.x = lx;
+		ray.position.y = ly;
+		ray.position.z = lz;
 		LightPathAux aux;
 		aux = TraceLightPath(ray, scene, 0, 1.0, mDepth, scene.eye);
 		//Igualar o map
@@ -509,6 +511,8 @@ int main(){
 	for(int i=0; i< scene.window.sizeX; i++){
 		for(int j=0; j<scene.window.sizeY; i++){
 			//Adicionar elementos nulos no mapa para cada (i,j) da tela
+			LightPaths.emplace(std::pair<int, int>(i,j), Color(0,0,0));
+			
 		}
 	}
 	CalculateLightPath(scene, nPaths, mDepth);
