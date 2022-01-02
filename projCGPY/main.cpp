@@ -348,7 +348,7 @@ void render(Scene scene,  int npaths, int maxDepth){
                 color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
-                //color = Tonemapping(color, tonemapping);
+                color = Tonemapping(color, tonemapping);
             	print_color(color);
                 //Função de save_pixel(pixel, x, y)
             }
