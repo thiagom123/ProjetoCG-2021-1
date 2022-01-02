@@ -13,9 +13,12 @@
 #include "core\Color.h"
 #include "core\Face.h"
 # define PI           3.14159265358979323846  /* pi */
-const float view_dist = 600.0;
+//const float view_dist = 600.0;
 vector<Objeto> objetos;
 const int mDepth = 5;
+const bool ShadowRayEmTodos=false;
+const int nPaths = 20;
+const int tonemapping = 0.5;
 ofstream file;
 struct Intersec
 {
@@ -154,7 +157,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float ly = objetos.at(0).vertexs.at(0).y;
 	bool hit2 = false;
 	
-	//if(depth == 0 ){
+	if(depth == 0 || ShadowRayEmTodos==true){
 		for (int k = 0; k < NShadow_Ray; k++){
 			int kx = k%RaizNShadow_Ray;
 			int kz = floor(k/RaizNShadow_Ray);
@@ -219,7 +222,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
 			
 		}
-	//}
+	}
 	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
@@ -238,7 +241,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			//ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
 			//Tem que multiplicar pela cor do objeto
 			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
 			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
@@ -394,7 +397,7 @@ int main(){
         std::cout << "Não Funcionou" << std::endl;
     }*/
 	scene.eye = compute_uvw(scene.eye);
-	scene.eye.view_dist = view_dist;
+	//scene.eye.view_dist = view_dist;
     objetos = scene.objects;
 	
 	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << " seed " <<scene.seed <<endl;
@@ -429,7 +432,6 @@ int main(){
 		Vector3D dir = random_direction(x,y,normal);
 		std::cout<< dir.x << " " << dir.y << " " << dir.z<<endl;
 	}*/
-	int nPaths = 20;
 	render(scene,nPaths,mDepth);
 	file.close();
 	std::cout << "Finalizado" << std::endl; 
