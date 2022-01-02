@@ -16,7 +16,7 @@
 //const float view_dist = 600.0;
 vector<Objeto> objetos;
 const int mDepth = 5;
-const bool ShadowRayEmTodos=true;
+const bool ShadowRayEmTodos=false;
 const int nPaths = 20;
 ofstream file;
 struct Intersec
@@ -239,7 +239,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		if(r < ClosestObj.kd){
 			float x = rand01(0,1);
 			float y = rand01(0,1);
-			Vector3D dir = random_direction(x,y,normal);
+			Vector3D dir = random_Hemisphere_direction(x,y,normal);
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
@@ -255,7 +255,10 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//Ray new_ray;
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(R);
-			//especular =csum(especular,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));		
+			ColorIndireto = trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);	
+			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.ks;
+			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.ks;
+			ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.ks;	
 			//new_ray.direction = Subv(KProd(2 * ProdEscalar(normal, pLuz), normal), pLuz);
 			
 		}else{
@@ -288,7 +291,10 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 					//new_ray.position = vectorToPoint(hit_point);
 					new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 					new_ray.direction = Normalize(transmitido.toVetor());
-					//transmitido = csum(transmitido,trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye));
+					ColorIndireto = trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+					ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kt;
+					ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kt;
+					ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kt;
 				}
 			}
 		}		
