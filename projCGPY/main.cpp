@@ -15,7 +15,7 @@
 # define PI           3.14159265358979323846  /* pi */
 const float view_dist = 600.0;
 vector<Objeto> objetos;
-const int mDepth = 7;
+const int mDepth = 5;
 ofstream file;
 struct Intersec
 {
@@ -238,7 +238,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+			//ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
 			//Tem que multiplicar pela cor do objeto
 			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
 			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
@@ -322,21 +322,32 @@ void render(Scene scene,  int npaths, int maxDepth){
         ray.position.x = eye.x;
         ray.position.y = eye.y;
         ray.position.z = eye.z;
+		Vector3D origin = pointToVector(ray.position);
+		float window_height = 2.0;
+		float window_width = 2.0;
+
         double sampleX, sampleY;
         Color color = Color(0,0,0); 
         Color colorAux;
+		Vector3D Lower_Left;
+		Lower_Left.x = scene.window.x0;
+		Lower_Left.y = scene.window.y0;
+		Lower_Left.z = 0;
 		//std::cout  <<"npath: " << npaths << std::endl;
-		file << "P3\n" << window.sizeX<< ' ' << window.sizeY << "\n255\n";
-        for (int j = window.sizeY - 1; j >=0 ; j--) {
-            for (int i = 0; i < window.sizeX; i++) {
+		file << "P3\n" << window.nPixelX<< ' ' << window.nPixelY << "\n255\n";
+        for (int j = window.nPixelY-1; j >=0 ; j--) {
+            for (int i = 0; i < window.nPixelX; i++) {
                 color.r = 0;
                 color.g = 0;
                 color.b = 0;
                 for (int s=0; s< npaths; s++){
-                    sampleX = (i + rand01(0.0, 1.0)) - (window.sizeX / 2.0);
-                    sampleY = (j + rand01(0.0, 1.0)) - (window.sizeY / 2.0);
+                    sampleX = (i + rand01(0.0, 1.0))*window_width/(window.nPixelX-1)+Lower_Left.x;
+                    sampleY = (j + rand01(0.0, 1.0))*window_height/(window.nPixelY-1)+Lower_Left.y;
                     //Tem que implementar essa função aqui
-                    ray.direction = get_direction(eye, window, sampleX, sampleY);
+
+        			Vector3D direction = Subv(Sumv(KProd(sampleX, Vector3D(1,0,0)), KProd(sampleY, Vector3D(0,1,0))), origin);
+					ray.direction=Normalize(direction);
+                    //ray.direction = get_direction(eye, Lower_Left_Corner, sampleX, sampleY);
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
                     colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye);
@@ -356,13 +367,13 @@ void render(Scene scene,  int npaths, int maxDepth){
 			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << std::right << std::setw(5) << "%" << std::endl;
 			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << "%" << std::endl;
 			std::cout << "[";
-			int pos = window.sizeX * ((window.sizeX - j) / window.sizeX);
-			for (int i = 0; i < window.sizeX; ++i) {
+			int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
+			for (int i = 0; i < window.nPixelX; ++i) {
 				if (i < pos) std::cout << "=";
 				else if (i == pos) std::cout << ">";
 				else std::cout << " ";
 			}
-			std::cout << "] " << int(((window.sizeX - j) / window.sizeX) * 100.0) << " %\r";
+			std::cout << "] " << int(((window.nPixelX - j) / window.nPixelX) * 100.0) << " %\r";
 			if(j >0){
 				std::cout.flush();
 			}else{

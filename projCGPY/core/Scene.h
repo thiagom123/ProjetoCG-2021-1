@@ -15,7 +15,7 @@ public:
 
 class Window{
 public:
-	float x0, y0, x1, y1, sizeX, sizeY;
+	float x0, y0, x1, y1, nPixelX, nPixelY;
 };
 
 class Light {
@@ -43,5 +43,5 @@ public:
 
 
 bool LoadScene(const char* path, Scene &scene);
-Vector3D get_direction(Eye eye, Window window, double x, double y);
+Vector3D get_direction(Eye eye, Point Lower_Left_Corner, double x, double y);
 Eye compute_uvw(Eye eye);

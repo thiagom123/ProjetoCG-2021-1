@@ -97,7 +97,7 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 	return Intersec(hit,distance,hit_point,temp);
 }
 
-Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
+Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye, Ray LightRay){
 	float bias = 1e-4;
 	if (depth > MaxDepth) return Color(0,0,0);
 	Color especular = Cor(0,0,0);
@@ -240,6 +240,8 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
 			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
+			//Se for 0, pegamos o raio e calculamos o próximo raio
+			//Se depth = maxDepth
 			//Tem que multiplicar pela cor do objeto
 			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
 			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
