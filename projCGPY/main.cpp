@@ -16,9 +16,8 @@
 //const float view_dist = 600.0;
 vector<Objeto> objetos;
 const int mDepth = 5;
-const bool ShadowRayEmTodos=false;
+const bool ShadowRayEmTodos=true;
 const int nPaths = 20;
-const int tonemapping = 0.5;
 ofstream file;
 struct Intersec
 {
@@ -156,21 +155,24 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float zMax = objetos.at(0).vertexs.at(0).z;
 	float ly = objetos.at(0).vertexs.at(0).y;
 	bool hit2 = false;
-	
+	float lx, lz;
 	if(depth == 0 || ShadowRayEmTodos==true){
 		for (int k = 0; k < NShadow_Ray; k++){
-			int kx = k%RaizNShadow_Ray;
-			int kz = floor(k/RaizNShadow_Ray);
-			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
-			float lx = xMin + (kx+0.5)*(xMax-xMin)/RaizNShadow_Ray;
-			float lz = zMin + (kz+0.5)*(zMax-zMin)/RaizNShadow_Ray;
+			//int kx = k%RaizNShadow_Ray;
+			//int kz = floor(k/RaizNShadow_Ray);
+			//std::cout<<"k: "<< k <<" kx "<< kx <<" kz "<< kz <<endl;
+			//float lx = xMin + (kx+0.5)*(xMax-xMin)/RaizNShadow_Ray;
+			//float lz = zMin + (kz+0.5)*(zMax-zMin)/RaizNShadow_Ray;
+			lx = rand01(xMin, xMax);
+			lz = rand01(zMin, zMax);
+			ly = 3.8360;
 			//std::cout<< "x:" << " " << xMin << " " << xMax<<endl;
 			//std::cout<< "z:" << " " << zMin << " " << zMax<<endl;
 			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
 			//std::cout << "lx:: "<<lx << " ly:"<< ly <<" lz:"<< lz <<endl;
-			lx = 0;
-			ly = 3.8360;
-			lz = -24.906;
+			//lx = 0;
+			//ly = 3.8360;
+			//lz = -24.906;
 			Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
