@@ -97,6 +97,14 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 	}
 	return Intersec(hit,distance,hit_point,temp);
 }
+Vector3D calcularRefracao(float n1, float n2, Vetor i, Vetor n){
+    float cosI = -ProdEscalar(i, n);
+
+    float sen2t = pow(n1 / n2, 2)*(1 - pow(cosI, 2));
+
+    Vector3D t = Sumv(KProd(n1 / n2, i),KProd(((n1 / n2)*cosI - sqrt(1 - sen2t)), n));
+    return t;
+}
 
 Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
 	float bias = 1e-4;
@@ -262,39 +270,28 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		}else{
 			//Transmissão
 			
-			if (ClosestObj.kt > 0){
-				Vector3D L = Normalize(ray.direction);
-				Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
-				if(Length(N) != 1){
-					N = Normalize(N);
-				}
-				float cos1 = ProdEscalar(N, flip_direction(L));
-				float div = nRefractedInitial/ ClosestObj.coeficienteRefracao;
-				float delta = 1-((pow(div,2))*(1-(pow(cos1,2))));
-				if(delta >= 0){
-					float cos2 = sqrt(delta);
-					if(nRefractedInitial != ClosestObj.coeficienteRefracao){
-						nRefractedInitial = ClosestObj.coeficienteRefracao;
-					}else{
-						nRefractedInitial = 1.0;
-					}
-					
-					if(cos1 > 0){
-						ColorIndireto = Sumv(KProd(div,L),KProd((div*cos1)-cos2,N));
-					}else{
-						transmitido = Sumv(KProd(div,L),KProd((div*cos1)+cos2,N));
-					}
+			float cos = ProdEscalar(ray.direction, normal);
+            float n1, n2;
+            Vector3D dir;
+            if (cos > 0){
+                //Inside the object
+                n1 = ClosestObj.coeficienteRefracao;
+                n2 = 1;
+                dir  = calcularRefracao(n1, n2, ray.direction, KProd(-1, normal));
+                normal = KProd(-1, normal);
+            }
+            else {
+                n1 = 1;
+                n2 = ClosestObj.coeficienteRefracao;
+                dir  = calcularRefracao(n1, n2, ray.direction, normal);
+            }
+
+            Vetor dist2 = KProd(bias, normal);
+            new_ray.position = vectorToPoint(Subv(hit_point,dist2));
+            new_ray.direction = Normalize(dir);
+            ColorIndireto = trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
 				
-					//Ray new_ray;
-					//new_ray.position = vectorToPoint(hit_point);
-					new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
-					new_ray.direction = Normalize(transmitido.toVetor());
-					ColorIndireto = trace_ray(new_ray,scene, depth +1, ClosestObj.coeficienteRefracao, MaxDepth, eye);
-					ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kt;
-					ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kt;
-					ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kt;
-				}
-			}
+			
 		}		
 	}
 	return csum(ColorDireta, ColorIndireto);
