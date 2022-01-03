@@ -232,7 +232,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 										
 					}
 				}
-
 			}
 			//std::cout << ClosestObj2.isLight <<endl;
 			//Se o mais próximo for a luz
@@ -247,16 +246,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
 				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
 			}	
-			//float kd = ClosestObj.kd;
-			//ColorShadow.r += lp*kd*scene.light.color.r/((float)NShadow_Ray);
-			//ColorShadow.g += lp*kd*scene.light.color.g/((float)NShadow_Ray);
-			//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
-			
 		}
 	}
 	//Shadow Ray para o LightPath
 	Color ColorBiDirectional = Color(0,0,0);
-	if(BiDirectionalPT==true){
+	if(BiDirectionalPT==1){
 		for (int k = 0; k < LightPath.size(); k++){
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
@@ -289,7 +283,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 										
 					}
 				}
-
 			}
 			//std::cout << ClosestObj2.isLight <<endl;
 			//Se o mais próximo for a luz
@@ -303,18 +296,13 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				ColorBiDirectional.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
 				ColorBiDirectional.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
 				ColorBiDirectional.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
-			}	
-			//float kd = ClosestObj.kd;
-			//ColorShadow.r += lp*kd*scene.light.color.r/((float)NShadow_Ray);
-			//ColorShadow.g += lp*kd*scene.light.color.g/((float)NShadow_Ray);
-			//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
-			
+			}			
 		}
 	}
-
 	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
+	ColorAmbiente = Color(0,0,0);
 	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
 	//std::cout<<"Color:" << " "<<ColorDireta.r << " " <<ColorDireta.g << " "<<ColorDireta.b <<endl;
 	//return ColorDireta;
@@ -383,15 +371,11 @@ void print_color(Color PixelColor){
     int ig = static_cast<int>(255.999 * g);
     int ib = static_cast<int>(255.999 * b);
 	file << ir << ' ' << ig << ' ' << ib << '\n';
-    //std::cout << ir << ' ' << ig << ' ' << ib << '\n';
 }
 
 Color Tonemapping(Color pixel, float tmapping){
-    //if 0.9999 < pixel.r > 1.0001 :
         pixel.r = pixel.r / (pixel.r + tmapping);
-    //if 0.9999 < pixel.g > 1.0001 :
         pixel.g = pixel.g / (pixel.g + tmapping);
-    //if 0.9999 < pixel.b > 1.0001 :
         pixel.b = pixel.b / (pixel.b + tmapping);
 		return pixel;
 }
@@ -524,7 +508,6 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 		float zMax = objetos.at(0).vertexs.at(0).z;
 		lightRay.position.y = objetos.at(0).vertexs.at(0).y;
 		float u1, u2;
-		
 		//std::cout  <<"npath: " << npaths << std::endl;
 		file << "P3\n" << window.nPixelX<< ' ' << window.nPixelY << "\n255\n";
         for (int j = window.nPixelY-1; j >=0 ; j--) {
@@ -539,7 +522,7 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 
         			Vector3D direction = Subv(Sumv(KProd(sampleX, Vector3D(1,0,0)), KProd(sampleY, Vector3D(0,1,0))), origin);
 					ray.direction=Normalize(direction);
-                    //ray.direction = get_direction(eye, Lower_Left_Corner, sampleX, sampleY);
+               
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
 					if(BiDirectionalPT==1 ){
@@ -556,23 +539,11 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
                     colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye,LightPath);
 					colorEyePath[i][j] = csum(colorEyePath[i][j], colorAux);
 					//std::cout << "TesteDepois" << std::endl;
-                    /*color.r = color.r + colorAux.r;
-                    color.g = color.g + colorAux.g;
-                    color.b = color.b + colorAux.b;*/
                 }
 				colorEyePath[i][j].r = colorEyePath[i][j].r/npaths;
 				colorEyePath[i][j].g = colorEyePath[i][j].g/npaths;
 				colorEyePath[i][j].b = colorEyePath[i][j].b/npaths;
-                /*color.r = color.r / npaths;
-                color.g = color.g / npaths;
-                color.b = color.b / npaths;
-                color = Tonemapping(color, tonemapping);
-            	print_color(color);*/
-                //Função de save_pixel(pixel, x, y)
             }
-			//std::cout << (((window.sizeX - j) / window.sizeX) * 100) << std::setw(10) << "%" << std::endl;
-			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << std::right << std::setw(5) << "%" << std::endl;
-			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << "%" << std::endl;
 			std::cout << "[";
 			int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
 			for (int i = 0; i < window.nPixelX; ++i) {
@@ -619,9 +590,9 @@ int main(){
         std::cout << "Não Funcionou" << std::endl;
     }*/
 	//Acho que está sem usar
-	scene.eye = compute_uvw(scene.eye);
-	//scene.eye.view_dist = view_dist;
+	//scene.eye = compute_uvw(scene.eye);
     objetos = scene.objects;
+	cout<<"Numero de Obj "<<objetos.size();
 	/*
 	Não é para usar
 	Face f1;

@@ -10,7 +10,6 @@ class Eye{
 public:
 	float x, y, z;
 	Vector3D u,v,w;
-	float view_dist;
 };
 
 class Window{

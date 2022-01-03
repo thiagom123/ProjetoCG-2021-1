@@ -1,10 +1,5 @@
 #include "Scene.h"
 #include <stdio.h>
-Vector3D get_direction(Eye eye, Point Lower_Left_Corner, double x, double y){
-        Vector3D direction = Subv( Sumv(KProd(x,eye.u), KProd(y,eye.v)), KProd(eye.view_dist,eye.w));
-
-		return Normalize(direction);
-}
 
 Eye compute_uvw(Eye eye){
         // w
