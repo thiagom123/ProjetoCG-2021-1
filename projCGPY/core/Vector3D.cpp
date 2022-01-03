@@ -45,13 +45,19 @@ Vector3D flip_direction(Vector3D res){
 }
 Vector3D random_Hemisphere_direction(double u1, double u2, Vector3D N){
 	Vector3D Nb, Nt;
-	float aux = (N.x * N.x + N.z * N.z);
-	float aux_1 = 1/aux;
-	if (std::fabs(N.x) > std::fabs(N.y)) 
+	if (std::fabs(N.x) > std::fabs(N.y)) {
         Nt = Vector3D(N.z, 0, -N.x); 
-    else 
+		float aux = (N.x * N.x + N.z * N.z);
+		float aux_1 = 1/aux;
+		Nt = KProd(aux_1, Nt);
+	}
+    else {
         Nt = Vector3D(0, -N.z, N.y);
-	Nt = KProd(aux_1, Nt);
+		float aux = (N.y * N.y + N.z * N.z);
+		float aux_1 = 1/aux;
+		Nt = KProd(aux_1, Nt);
+	}
+	
     Nb = ProdVetorial(N, Nt); 
 	Vector3D sample = sample_direction_hemisphere(u1, u2);
 	Vector3D v;
