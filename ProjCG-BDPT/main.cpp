@@ -19,6 +19,11 @@ const int mDepth = 5;
 const int mBounces = 2;
 const bool ShadowRayEmTodos=false;
 const int nPaths = 20;
+
+//Variável para determinar qual tipo de BPDT vai ser utilizado
+//0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
+const int BPDT = 1;
+
 ofstream file;
 Object camera;
 Color colorLightPath[400][400];
@@ -248,6 +253,63 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			
 		}
 	}
+	//Shadow Ray para o LightPath
+	if(BPDT==true){
+		for (int k = 0; k < LightPath.size(); k++){
+			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
+			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
+			Ray shadow_ray2;
+			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
+			shadow_ray2.direction = luz;
+			//bool hit2 = false;
+			Object ClosestObj2;
+			ClosestObj2.isLight  = true;
+			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
+			Object CurrentObj2;
+			Vector3D Normal2;
+			vector<Face> CurrentFaces2;
+			for(int i=0; i < objetos.size();i++){
+				CurrentObj2 = objetos.at(i);
+				CurrentFaces2 = CurrentObj2.faces;
+				for(int j=0;j<CurrentFaces2.size();j++){
+					Face f2 = CurrentFaces2.at(j);
+					Vertex* P12 = f2.v1;
+					Vertex* P22 = f2.v2;
+					Vertex* P32 = f2.v3;
+					Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
+					if(inter2.hit && inter2.distance < dist2){
+						dist2 = inter2.distance;
+						ClosestObj2 = CurrentObj2;
+						hit2 = inter2.hit;
+						Normal2 = inter2.normal;
+						//Normal2 = KProd(bias,inter2.normal);
+						//Armazena o objeto mais próximo
+										
+					}
+				}
+
+			}
+			//std::cout << ClosestObj2.isLight <<endl;
+			//Se o mais próximo for a luz
+			if(ClosestObj2.isLight){
+				//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
+				float lp2= scene.light.lp;
+				float kd = ClosestObj.kd;
+				float cossenoAng = ProdEscalar(normal, luz);
+				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
+				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
+				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
+				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
+				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
+			}	
+			//float kd = ClosestObj.kd;
+			//ColorShadow.r += lp*kd*scene.light.color.r/((float)NShadow_Ray);
+			//ColorShadow.g += lp*kd*scene.light.color.g/((float)NShadow_Ray);
+			//ColorShadow.b += lp*kd*scene.light.color.b/((float)NShadow_Ray);	
+			
+		}
+	}
+
 	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
@@ -489,8 +551,8 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 					lightRay.direction = random_Hemisphere_direction(u1,u2,dirLuz);
 					CalcularLightPath(scene, lightRay,maxBounces,maxBounces, scene.light.color);
 
-                    //colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye,LightPath);
-					colorEyePath[i][j] = csum(colorEyePath[i][j],colorAux);
+                    colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye,LightPath);
+					colorEyePath[i][j] = csum(colorEyePath[i][j],KProdC((1/(float)npaths), colorAux));
 					//std::cout << "TesteDepois" << std::endl;
                     /*color.r = color.r + colorAux.r;
                     color.g = color.g + colorAux.g;
@@ -554,10 +616,10 @@ int main(){
     objetos = scene.objects;
 
 	Face f1;
-	Vertex f1v1 = Point(-0.05,0.05,0);
-	Vertex f1v2 = Point(-0.05,-0.05,0);
-	Vertex f1v3 = Point(0.05,-0.05,0);
-	Vertex f1v4 = Point(0.05,0.05,0);
+	Vertex f1v1 = Point(scene.window.x0,scene.window.y1,0);
+	Vertex f1v2 = Point(scene.window.x0,scene.window.y0,0);
+	Vertex f1v3 = Point(scene.window.x1,scene.window.y0,0);
+	Vertex f1v4 = Point(scene.window.x1,scene.window.y1,0);
 	f1.v1 = &f1v1;
 	f1.v2 = &f1v2;
 	f1.v3 = &f1v3;
