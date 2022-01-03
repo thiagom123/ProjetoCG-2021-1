@@ -19,7 +19,8 @@ const int mDepth = 5;
 const int mBounces = 2;
 const bool ShadowRayEmTodos=false;
 const int nPaths = 20;
-const int CornellBox = 2;
+const int CornellBox = 1;
+const bool ApplyTonemapping = true;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
@@ -135,9 +136,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float lp = scene.light.lp;
 	int RaizNShadow_Ray = 3;
 	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;
-	float dist = 10000000;
-	float dist2 = 10000000;
-	float dist3 = 10000000;
+	float dist = 100000000;
+	float dist2 = 100000000;
+	float dist3 = 100000000;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
 	float temLuz = 1.0;
@@ -202,13 +203,14 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//lx = 0;
 			//ly = 3.8360;
 			//lz = -24.906;
+			dist2 = 100000000;
 			Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			shadow_ray2.direction = luz;
 			//bool hit2 = false;
 			Object ClosestObj2;
-			ClosestObj2.isLight  = true;
+			ClosestObj2.isLight  = false;
 			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 			Object CurrentObj2;
 			Vector3D Normal2;
@@ -242,9 +244,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				float cossenoAng = ProdEscalar(normal, luz);
 				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
 				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
-				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
-				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
-				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
+				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r*ClosestObj.color.r/((float)NShadow_Ray);
+				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g*ClosestObj.color.g/((float)NShadow_Ray);
+				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b*ClosestObj.color.b/((float)NShadow_Ray);		
 			}	
 		}
 	}
@@ -252,6 +254,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	Color ColorBiDirectional = Color(0,0,0);
 	if(BiDirectionalPT==1){
 		for (int k = 0; k < LightPath.size(); k++){
+			dist2 = 100000000;
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
 			Ray shadow_ray2;
@@ -259,7 +262,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			shadow_ray2.direction = luz;
 			//bool hit2 = false;
 			Object ClosestObj2;
-			ClosestObj2.isLight  = true;
+			ClosestObj2.isLight  = false;
 			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 			Object CurrentObj2;
 			Vector3D Normal2;
@@ -558,9 +561,12 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 				std::cout << std::endl;
 			}
         }
+		Color colorPixel;
 		for (int j = window.nPixelY-1; j >=0 ; j--) {
             for (int i = 0; i < window.nPixelX; i++) {
-				print_color(Tonemapping(csum(colorLightPath[i][j],colorEyePath[i][j]),tonemapping));
+				colorPixel = csum(colorLightPath[i][j],colorEyePath[i][j]);
+				if(ApplyTonemapping==true)print_color(Tonemapping(colorPixel,tonemapping));
+				else print_color(colorPixel);
 			}
 		}
 }
