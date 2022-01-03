@@ -280,7 +280,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 					}
 					
 					if(cos1 > 0){
-						transmitido = Sumv(KProd(div,L),KProd((div*cos1)-cos2,N));
+						ColorIndireto = Sumv(KProd(div,L),KProd((div*cos1)-cos2,N));
 					}else{
 						transmitido = Sumv(KProd(div,L),KProd((div*cos1)+cos2,N));
 					}
