@@ -330,11 +330,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
+			//ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
 			//Tem que multiplicar pela cor do objeto
-			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
-			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
-			ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kd;
+			//ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
+			//ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
+			//ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kd;
 		}else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
