@@ -19,10 +19,11 @@ const int mDepth = 5;
 const int mBounces = 2;
 const bool ShadowRayEmTodos=false;
 const int nPaths = 20;
+const int CornellBox = 2;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
-const int BPDT = 1;
+const int BiDirectionalPT = 0;
 
 ofstream file;
 Object camera;
@@ -254,7 +255,8 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		}
 	}
 	//Shadow Ray para o LightPath
-	if(BPDT==true){
+	Color ColorBiDirectional = Color(0,0,0);
+	if(BiDirectionalPT==true){
 		for (int k = 0; k < LightPath.size(); k++){
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
@@ -298,9 +300,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				float cossenoAng = ProdEscalar(normal, luz);
 				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
 				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
-				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
-				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
-				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
+				ColorBiDirectional.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
+				ColorBiDirectional.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
+				ColorBiDirectional.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
 			}	
 			//float kd = ClosestObj.kd;
 			//ColorShadow.r += lp*kd*scene.light.color.r/((float)NShadow_Ray);
@@ -540,24 +542,27 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
                     //ray.direction = get_direction(eye, Lower_Left_Corner, sampleX, sampleY);
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
-					
-					lightRay.position.x = rand01(xMin, xMax);
-					lightRay.position.z = rand01(zMin, zMax);
-					u1 = rand01(0,1);
-					u2 = rand01(0,1);
-					//Calcular normal da fonte de luz, deve ser a mesmo do ponto
-					LightPath.clear();
-					Vector3D dirLuz = Normal(*scene.light.object->faces.at(0).v1,*scene.light.object->faces.at(0).v2,*scene.light.object->faces.at(0).v3);
-					lightRay.direction = random_Hemisphere_direction(u1,u2,dirLuz);
-					CalcularLightPath(scene, lightRay,maxBounces,maxBounces, scene.light.color);
-
+					if(BiDirectionalPT==1 ){
+						lightRay.position.x = rand01(xMin, xMax);
+						lightRay.position.z = rand01(zMin, zMax);
+						u1 = rand01(0,1);
+						u2 = rand01(0,1);
+						//Calcular normal da fonte de luz, deve ser a mesmo do ponto
+						LightPath.clear();
+						Vector3D dirLuz = Normal(*scene.light.object->faces.at(0).v1,*scene.light.object->faces.at(0).v2,*scene.light.object->faces.at(0).v3);
+						lightRay.direction = random_Hemisphere_direction(u1,u2,dirLuz);
+						CalcularLightPath(scene, lightRay,maxBounces,maxBounces, scene.light.color);
+					}
                     colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye,LightPath);
-					colorEyePath[i][j] = csum(colorEyePath[i][j],KProdC((1/(float)npaths), colorAux));
+					colorEyePath[i][j] = csum(colorEyePath[i][j], colorAux);
 					//std::cout << "TesteDepois" << std::endl;
                     /*color.r = color.r + colorAux.r;
                     color.g = color.g + colorAux.g;
                     color.b = color.b + colorAux.b;*/
                 }
+				colorEyePath[i][j].r = colorEyePath[i][j].r/npaths;
+				colorEyePath[i][j].g = colorEyePath[i][j].g/npaths;
+				colorEyePath[i][j].b = colorEyePath[i][j].b/npaths;
                 /*color.r = color.r / npaths;
                 color.g = color.g / npaths;
                 color.b = color.b / npaths;
@@ -594,7 +599,9 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 O verdadeiro main*/
 int main(){
     Scene scene;
-    bool temp = LoadScene("cornell_box\\cornellroom.sdl",scene);
+    if(CornellBox ==1 )bool temp = LoadScene("cornell_box\\cornellroom.sdl",scene);
+	else if (CornellBox == 2)bool temp = LoadScene("cornell_box_2\\cornellroom.sdl",scene);
+	
 	for (int i = 0; i < scene.window.nPixelX; i++)
 	{
 		for (int j = 0; j < scene.window.nPixelY; j++)
@@ -611,10 +618,12 @@ int main(){
     }else{
         std::cout << "Não Funcionou" << std::endl;
     }*/
+	//Acho que está sem usar
 	scene.eye = compute_uvw(scene.eye);
 	//scene.eye.view_dist = view_dist;
     objetos = scene.objects;
-
+	/*
+	Não é para usar
 	Face f1;
 	Vertex f1v1 = Point(scene.window.x0,scene.window.y1,0);
 	Vertex f1v2 = Point(scene.window.x0,scene.window.y0,0);
@@ -629,11 +638,14 @@ int main(){
 	f2.v3 = &f1v4;
 	camera.faces.push_back(f1);
 	camera.faces.push_back(f2);
+	*/
 
 	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << " seed " <<scene.seed <<endl;
     for (int i = 0; i < scene.objects.size(); i++)
 	{
-        std::string objPath = "cornell_box\\";
+        std::string objPath;
+		if(CornellBox ==1 )objPath = "cornell_box\\";
+		if(CornellBox ==2 )objPath = "cornell_box\\";
 		//char realPath [100]= "cornel_box\\";
 		//strcat(objPath, objetos.at(i).path);
         objPath += objetos.at(i).path;
