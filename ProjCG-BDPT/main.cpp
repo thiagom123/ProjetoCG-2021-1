@@ -50,6 +50,8 @@ struct LightPathPoint
 {
 	Point p;
 	Color c;
+	int objectIndex;
+	int faceIndex;
 };
 struct EyePath{
 	bool HitLight;
@@ -219,20 +221,22 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				CurrentObj2 = objetos.at(i);
 				CurrentFaces2 = CurrentObj2.faces;
 				for(int j=0;j<CurrentFaces2.size();j++){
-					Face f2 = CurrentFaces2.at(j);
-					Vertex* P12 = f2.v1;
-					Vertex* P22 = f2.v2;
-					Vertex* P32 = f2.v3;
-					Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
-					if(inter2.hit && inter2.distance < dist2){
-						dist2 = inter2.distance;
-						ClosestObj2 = CurrentObj2;
-						hit2 = inter2.hit;
-						Normal2 = inter2.normal;
-						//Normal2 = KProd(bias,inter2.normal);
-						//Armazena o objeto mais próximo
-										
-					}
+					if(!(LightPath.at(k).objectIndex == i && LightPath.at(k).faceIndex == 1)){
+                        Face f2 = CurrentFaces2.at(j);
+                        Vertex* P12 = f2.v1;
+                        Vertex* P22 = f2.v2;
+                        Vertex* P32 = f2.v3;
+                        Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
+                        if(inter2.hit && inter2.distance < dist2){
+                            dist2 = inter2.distance;
+                            ClosestObj2 = CurrentObj2;
+                            hit2 = inter2.hit;
+                            Normal2 = inter2.normal;
+                            //Normal2 = KProd(bias,inter2.normal);
+                            //Armazena o objeto mais próximo
+
+                        }
+                    }
 				}
 			}
 			//std::cout << ClosestObj2.isLight <<endl;
