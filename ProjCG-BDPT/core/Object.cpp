@@ -9,7 +9,7 @@ bool lerObjeto(const char* path, Objeto &objeto){
 
 	FILE * file = fopen(path, "r");
 	if (file == NULL){
-		printf("Impossible to open the file ! Are you in the right path ? See Tutorial 1 for details\n");
+		printf("Não foi possível ler o arquivo\n");
 		getchar();
 		return false;
 	}

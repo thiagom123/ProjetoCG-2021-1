@@ -32,23 +32,47 @@ Vector3D::Vector3D(float x, float y, float z){
 	this->z = z;
 }
 
-Vector3D sample_direction(double u1, double u2){
-	double z = pow(1.0 - u1, 1.0/1.0);
-
-	double phi = 6.24 * u2;
-	double theta = sqrt(std::max(0.0,1.0 - z * z));
-	double R1 = distr(generator);
-	double R2 = distr(generator);
-
-	Vector3D p;
-	p.x = theta * cos(phi);
-    p.y = theta * sin(phi);
-    p.z = z;
-	return p;
+Vector3D sample_direction_hemisphere(double r1, double r2){
+	float sinTheta = sqrtf(1 - r1 * r1); 
+    float phi = 2 * M_PI * r2; 
+    float x = sinTheta * cosf(phi); 
+    float z = sinTheta * sinf(phi); 
+    return Vector3D(x, r1, z); 
 }
 
 Vector3D flip_direction(Vector3D res){
 	return KProd(-1,res);
+}
+Vector3D random_Hemisphere_direction(double u1, double u2, Vector3D N){
+	Vector3D Nb, Nt;
+	if (std::fabs(N.x) > std::fabs(N.y)) {
+        Nt = Vector3D(N.z, 0, -N.x); 
+		float aux = (N.x * N.x + N.z * N.z);
+		float aux_1 = 1/aux;
+		Nt = KProd(aux_1, Nt);
+	}
+    else {
+        Nt = Vector3D(0, -N.z, N.y);
+		float aux = (N.y * N.y + N.z * N.z);
+		float aux_1 = 1/aux;
+		Nt = KProd(aux_1, Nt);
+	}
+	
+    Nb = ProdVetorial(N, Nt); 
+	Vector3D sample = sample_direction_hemisphere(u1, u2);
+	Vector3D v;
+	v.x = sample.x * Nb.x + sample.y * N.x + sample.z * Nt.x;
+	v.y = sample.x * Nb.y + sample.y * N.y + sample.z * Nt.y;
+	v.z = sample.x * Nb.z + sample.y * N.z + sample.z * Nt.z;
+	v = Normalize(v);
+	return v;
+}
+Vector3D sample_direction(double r1, double r2){
+	float sinTheta = sqrtf(1 - r1 * r1); 
+    float phi = 2 * M_PI * r2; 
+    float x = sinTheta * cosf(phi); 
+    float z = sinTheta * sinf(phi); 
+    return Vector3D(x, r1, z); 
 }
 
 Vector3D random_direction(double u1, double u2, Vector3D normal){

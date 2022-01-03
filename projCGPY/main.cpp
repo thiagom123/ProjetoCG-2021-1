@@ -101,8 +101,6 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C){
 Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int MaxDepth, Eye eye){
 	float bias = 1e-4;
 	if (depth > MaxDepth) return Color(0,0,0);
-	Color especular = Cor(0,0,0);
-	Color transmitido = Cor(0,0,0);
 	float lp = scene.light.lp;
 	int RaizNShadow_Ray = 3;
 	int NShadow_Ray = RaizNShadow_Ray*RaizNShadow_Ray;

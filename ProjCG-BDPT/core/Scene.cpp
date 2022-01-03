@@ -1,8 +1,9 @@
 #include "Scene.h"
 #include <stdio.h>
-Vector3D get_direction(Eye eye, Window window, double x, double y){
+Vector3D get_direction(Eye eye, Point Lower_Left_Corner, double x, double y){
         Vector3D direction = Subv( Sumv(KProd(x,eye.u), KProd(y,eye.v)), KProd(eye.view_dist,eye.w));
-        return Normalize(direction);
+
+		return Normalize(direction);
 }
 
 Eye compute_uvw(Eye eye){
@@ -47,7 +48,7 @@ bool LoadScene(const char* path, Scene &Scene){
 			fscanf(file, "%f %f %f\n", &Scene.eye.x, &Scene.eye.y, &Scene.eye.z);
 		}
         else if (strcmp(lineHeader, "size") == 0){
-			fscanf(file, "%f %f\n", &Scene.window.sizeX, &Scene.window.sizeY);
+			fscanf(file, "%f %f\n", &Scene.window.nPixelX, &Scene.window.nPixelY);
 
 		}
 		else if (strcmp(lineHeader, "ortho") == 0){

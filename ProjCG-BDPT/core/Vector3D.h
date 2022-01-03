@@ -32,6 +32,6 @@ Vector3D Subv(Vector3D v1, Vector3D v2); // Subtracao de vetores
 Vector3D ProdVetorial(Vector3D vetor1, Vector3D vetor2); // Produto vetorial v1 x v2
 float ProdEscalar(Vector3D vetor1, Vector3D vetor2); // Produto interno  <v1.v2>
 Vector3D Normalize(Vector3D vetor); // Normalizar vetor. |vetor| = 1
-
-
+Vector3D random_Hemisphere_direction(double u1, double u2, Vector3D N);
+Vector3D sample_direction_hemisphere(double r1, double r2);
 
