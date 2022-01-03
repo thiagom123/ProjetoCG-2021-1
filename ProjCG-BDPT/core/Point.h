@@ -1,5 +1,5 @@
 #pragma once
-#include "Vector3D.h"
+//#include "Vector3D.h"
 
 class Point{
 public:
@@ -11,10 +11,11 @@ public:
 			P1.z = P.z +v.z;
 			return P1;
 		}*/
-	
-};
+	Point(float x, float y, float z);
+	Point();	
+};	
+/*class Vertex : public Point{
 
-class Vertex : public Point{
-
-};
+};*/
 using Vertice = Point;
+using Vertex = Point;
