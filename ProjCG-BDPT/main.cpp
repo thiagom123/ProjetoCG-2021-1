@@ -573,7 +573,7 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 			//std::cout << (((window.sizeX - j) / window.sizeX) * 100) << std::setw(10) << "%" << std::endl;
 			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << std::right << std::setw(5) << "%" << std::endl;
 			//std::cout << std::left << std::setw(5) << (((window.sizeX - j) / window.sizeX) * 100) << "%" << std::endl;
-			/*std::cout << "[";
+			std::cout << "[";
 			int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
 			for (int i = 0; i < window.nPixelX; ++i) {
 				if (i < pos) std::cout << "=";
@@ -585,7 +585,7 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 				std::cout.flush();
 			}else{
 				std::cout << std::endl;
-			}*/
+			}
         }
 		for (int j = window.nPixelY-1; j >=0 ; j--) {
             for (int i = 0; i < window.nPixelX; i++) {
@@ -645,12 +645,13 @@ int main(){
 	{
         std::string objPath;
 		if(CornellBox ==1 )objPath = "cornell_box\\";
-		if(CornellBox ==2 )objPath = "cornell_box\\";
+		if(CornellBox ==2 )objPath = "cornell_box_2\\";
 		//char realPath [100]= "cornel_box\\";
 		//strcat(objPath, objetos.at(i).path);
         objPath += objetos.at(i).path;
         //std::cout << objPath << std::endl;
 		lerObjeto(objPath.c_str(), objetos.at(i));
+		cout<< "Objeto: "<< i<<endl;
 		//objetos.at(i).normalVertice();
 	}
 	scene.light.object = &objetos.at(0);
