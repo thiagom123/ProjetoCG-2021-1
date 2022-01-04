@@ -19,13 +19,13 @@ const int mDepth = 5;
 const int mBounces = 4;
 const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos=false;
-const int nPaths = 50;
+const int nPaths = 20;
 const int CornellBox = 2;
 const bool ApplyTonemapping = true;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
-const int BiDirectionalPT = 1;
+const int BiDirectionalPT = 0;
 
 ofstream file;
 Object camera;
@@ -430,29 +430,30 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
     }
 
 	if(hit == false){
-		/*
-		for(int j=0;j<camera.faces.size();j++){
-			Face f = camera.faces.at(j);
-            Vertex* P1 = f.v1;
-            Vertex* P2 = f.v2;
-            Vertex* P3 = f.v3;
-			Intersec inter = intersection(lightRay,*P1,*P2,*P3);
-			//Calcular "i"
-			if(inter.hit){
-				std::cout << "Hit" << std::endl;		
-				//Calcular "i" e "j" da matriz de pixels e adicionar cores
-				float imgHeight = scene.window.y1 - scene.window.y0;
-				float imgWidth = scene.window.x1 - scene.window.x0;
-				int i = floor((hit_point.x - scene.window.x0)*(scene.window.nPixelX-1)/imgWidth);
-				int j = floor((hit_point.y - scene.window.y0)*(scene.window.nPixelY-1)/imgHeight);
-				colorLightPath[i][j] = csum(colorLightPath[i][j],corAtualRaio);
-				//Calculo das contribuições
-				//Salver cor na matriz de pixels
+		if(BiDirectionalPT==2){
+			for(int j=0;j<camera.faces.size();j++){
+				Face f = camera.faces.at(j);
+				Vertex* P1 = f.v1;
+				Vertex* P2 = f.v2;
+				Vertex* P3 = f.v3;
+				Intersec inter = intersection(lightRay,*P1,*P2,*P3);
+				//Calcular "i"
+				if(inter.hit){
+					std::cout << "Hit" << std::endl;		
+					//Calcular "i" e "j" da matriz de pixels e adicionar cores
+					float imgHeight = scene.window.y1 - scene.window.y0;
+					float imgWidth = scene.window.x1 - scene.window.x0;
+					int i = floor((hit_point.x - scene.window.x0)*(scene.window.nPixelX-1)/imgWidth);
+					int j = floor((hit_point.y - scene.window.y0)*(scene.window.nPixelY-1)/imgHeight);
+					colorLightPath[i][j] = csum(colorLightPath[i][j],corAtualRaio);
+					//Calculo das contribuições
+					//Salver cor na matriz de pixels
+				}
 			}
-		 }*/
+		}
 		return;
 	}
-	//Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);
+
 
 	
 	LightPoint.p = vectorToPoint(hit_point);
@@ -461,6 +462,58 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 	float ktot = ClosestObj.kd + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
 	Ray new_ray;
+	if (bounces==maxbounces){
+		if(BiDirectionalPT==2){
+				Ray LightCameraRay;
+				LightCameraRay.position = LightPoint.p;
+				Vector3D olho = Vector3D(scene.eye.x, scene.eye.y, scene.eye.z);
+				LightCameraRay.direction = Subv(olho, pointToVector(LightCameraRay.position));
+				Object CurrentObj2;
+				Vector3D Normal2;
+				vector<Face> CurrentFaces2;
+				bool hitLight = false;
+				for(int i=0; i < objetos.size();i++){
+					CurrentObj2 = objetos.at(i);
+					CurrentFaces2 = CurrentObj2.faces;
+					for(int j=0;j<CurrentFaces2.size();j++){
+						Face f2 = CurrentFaces2.at(j);
+						Vertex* P12 = f2.v1;
+						Vertex* P22 = f2.v2;
+						Vertex* P32 = f2.v3;
+						Intersec inter2 = intersection(LightCameraRay,*P12,*P22,*P32);
+						if(inter2.hit){
+							hitLight=true;
+							break;
+						}
+					}
+					if(hitLight){
+						break;
+					}
+				}
+				if(!hitLight){
+					for(int j=0;j<camera.faces.size();j++){
+						Face f = camera.faces.at(j);
+						Vertex* P1 = f.v1;
+						Vertex* P2 = f.v2;
+						Vertex* P3 = f.v3;
+						Intersec inter = intersection(lightRay,*P1,*P2,*P3);
+						//Calcular "i"
+						if(inter.hit){
+							std::cout << "Hit" << std::endl;		
+							//Calcular "i" e "j" da matriz de pixels e adicionar cores
+							float imgHeight = scene.window.y1 - scene.window.y0;
+							float imgWidth = scene.window.x1 - scene.window.x0;
+							int i = floor((hit_point.x - scene.window.x0)*(scene.window.nPixelX-1)/imgWidth);
+							int j = floor((hit_point.y - scene.window.y0)*(scene.window.nPixelY-1)/imgHeight);
+							colorLightPath[i][j] = csum(colorLightPath[i][j],corAtualRaio);
+							//Calculo das contribuições
+							//Salver cor na matriz de pixels
+						}
+					}
+				}
+		}
+		return;		
+	}
 	if(r < ClosestObj.kd){
 			float x = rand01(0,1);
 			float y = rand01(0,1);
@@ -497,8 +550,13 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		Vetor dist2 = KProd(bias, normal);
 		new_ray.position = vectorToPoint(Subv(hit_point,dist2));
 		new_ray.direction = Normalize(dir);
+
 		CalcularLightPath(scene,new_ray, bounces+1, maxbounces, corAtualRaio);
+		
 	}
+		
+		
+	
 }
 
 void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
@@ -615,23 +673,23 @@ int main(){
 	//scene.eye = compute_uvw(scene.eye);
     objetos = scene.objects;
 	cout<<"Numero de Obj "<<objetos.size();
-	/*
-	Não é para usar
-	Face f1;
-	Vertex f1v1 = Point(scene.window.x0,scene.window.y1,0);
-	Vertex f1v2 = Point(scene.window.x0,scene.window.y0,0);
-	Vertex f1v3 = Point(scene.window.x1,scene.window.y0,0);
-	Vertex f1v4 = Point(scene.window.x1,scene.window.y1,0);
-	f1.v1 = &f1v1;
-	f1.v2 = &f1v2;
-	f1.v3 = &f1v3;
-	Face f2;
-	f2.v1 = &f1v1;
-	f2.v2 = &f1v3;
-	f2.v3 = &f1v4;
-	camera.faces.push_back(f1);
-	camera.faces.push_back(f2);
-	*/
+	if(BiDirectionalPT==2){
+		Face f1;
+		Vertex f1v1 = Point(scene.window.x0,scene.window.y1,0);
+		Vertex f1v2 = Point(scene.window.x0,scene.window.y0,0);
+		Vertex f1v3 = Point(scene.window.x1,scene.window.y0,0);
+		Vertex f1v4 = Point(scene.window.x1,scene.window.y1,0);
+		f1.v1 = &f1v1;
+		f1.v2 = &f1v2;
+		f1.v3 = &f1v3;
+		Face f2;
+		f2.v1 = &f1v1;
+		f2.v2 = &f1v3;
+		f2.v3 = &f1v4;
+		camera.faces.push_back(f1);
+		camera.faces.push_back(f2);
+	}
+	
 
 	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b  << " npath "<< scene.npaths << " tonemap " << scene.tonemapping << " seed " <<scene.seed <<endl;
     for (int i = 0; i < scene.objects.size(); i++)
