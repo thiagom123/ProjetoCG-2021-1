@@ -17,8 +17,9 @@
 vector<Objeto> objetos;
 const int mDepth = 5;
 const int mBounces = 4;
+const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos=false;
-const int nPaths = 20;
+const int nPaths = 50;
 const int CornellBox = 2;
 const bool ApplyTonemapping = true;
 
@@ -192,7 +193,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	bool hit2 = false;
 	float lx, lz;
 	
-	if((depth == 0 || ShadowRayEmTodos==true) && BiDirectionalPT==0){
+	if((depth == 0 || ShadowRayEmTodos==true) && UsarShadowRay==true){
 		for (int k = 0; k < NShadow_Ray; k++){
 			//int kx = k%RaizNShadow_Ray;
 			//int kz = floor(k/RaizNShadow_Ray);
