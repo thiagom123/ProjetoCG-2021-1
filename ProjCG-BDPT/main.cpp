@@ -18,7 +18,7 @@ vector<Objeto> objetos;
 //Alguns parâmetros
 const int mDepth = 5;
 const int mBounces = 3;
-const bool UsarShadowRay = false;
+const bool UsarShadowRay = true;
 const bool ShadowRayEmTodos = false;
 const int NShadow_Ray = 5;
 const int nPaths = 20;
@@ -30,7 +30,7 @@ const bool ApplyTonemapping = false;
 //0 - Sem BiDirectional, Path tracing normal
 //1 - Cada Ponto do LightPath é uma fonte de luz secundária
 //2 - Lançamos o light Path e cada ponto envia um raio para a câmera
-const int BiDirectionalPT = 2;
+const int BiDirectionalPT = 0;
 
 ofstream file;
 Object camera;
@@ -551,7 +551,8 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		Vetor dist2 = KProd(bias, normal);
 		new_ray.position = vectorToPoint(Subv(hit_point, dist2));
 		new_ray.direction = Normalize(dir);
-
+		LightPoint.c = corAtualRaio;
+		LightPath.push_back(LightPoint);
 		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
 	}
 	//std::cout<<"PASSEI 5"<<endl;
