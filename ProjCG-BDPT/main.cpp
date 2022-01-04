@@ -25,7 +25,7 @@ const bool ApplyTonemapping = true;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
-const int BiDirectionalPT = 0;
+const int BiDirectionalPT = 2;
 
 ofstream file;
 Object camera;
@@ -467,7 +467,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				Ray LightCameraRay;
 				LightCameraRay.position = LightPoint.p;
 				Vector3D olho = Vector3D(scene.eye.x, scene.eye.y, scene.eye.z);
-				LightCameraRay.direction = Subv(olho, pointToVector(LightCameraRay.position));
+				LightCameraRay.direction = Normalize(Subv(olho, pointToVector(LightCameraRay.position)));
 				Object CurrentObj2;
 				Vector3D Normal2;
 				vector<Face> CurrentFaces2;
@@ -483,13 +483,12 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 						Intersec inter2 = intersection(LightCameraRay,*P12,*P22,*P32);
 						if(inter2.hit){
 							hitLight=true;
-							break;
+							goto endOfLoop;
 						}
 					}
-					if(hitLight){
-						break;
-					}
+
 				}
+				endOfLoop:
 				if(!hitLight){
 					for(int j=0;j<camera.faces.size();j++){
 						Face f = camera.faces.at(j);
@@ -602,7 +601,7 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
                
 					//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
 					//std::cout << "Teste" << std::endl;
-					if(BiDirectionalPT==1 ){
+					if(BiDirectionalPT>0 ){
 						lightRay.position.x = rand01(xMin, xMax);
 						lightRay.position.z = rand01(zMin, zMax);
 						u1 = rand01(0,1);
@@ -620,6 +619,11 @@ void render(Scene scene,  int npaths, int maxDepth,int maxBounces){
 				colorEyePath[i][j].r = colorEyePath[i][j].r/npaths;
 				colorEyePath[i][j].g = colorEyePath[i][j].g/npaths;
 				colorEyePath[i][j].b = colorEyePath[i][j].b/npaths;
+				if(BiDirectionalPT==2){
+					colorLightPath[i][j].r = colorLightPath[i][j].r/npaths;
+					colorLightPath[i][j].g = colorLightPath[i][j].g/npaths;
+					colorLightPath[i][j].b = colorLightPath[i][j].b/npaths;
+				}
             }
 			std::cout << "[";
 			int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
@@ -660,8 +664,7 @@ int main(){
 			colorLightPath[i][j] = Color(0,0,0);
 			colorEyePath[i][j] = Color(0,0,0);
 		}
-		
-		/* code */
+
 	}
 	
     /*if(temp){
