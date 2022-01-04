@@ -472,7 +472,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-	std::cout<<"PASSEI 1"<<endl;
+	//std::cout<<"PASSEI 1"<<endl;
 	if (hit == false)
 	{
 		if (BiDirectionalPT == 2)
@@ -491,8 +491,8 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
 					float imgHeight = 2.0;
 					float imgWidth = 2.0;
-					int i = floor((hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
-					int j = floor((hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
+					int i = floor((inter.hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
+					int j = floor((inter.hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
 					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
 					//Calculo das contribuições
 					//Salver cor na matriz de pixels
@@ -501,7 +501,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		}
 		return;
 	}
-	std::cout<<"PASSEI 2"<<endl;
+	//std::cout<<"PASSEI 2"<<endl;
 	LightPoint.p = vectorToPoint(hit_point);
 	//Possivelmente armazenar características do objeto em que houve intersecção
 	//Fizemos apenas o difuso e a transmissão
@@ -523,9 +523,9 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		corAtualRaio.g = corAtualRaio.g * ClosestObj.color.g * ClosestObj.kd*cossenoAng;
 		LightPoint.c = corAtualRaio;
 		LightPath.push_back(LightPoint);
-		std::cout<<"PASSEI 3"<<endl;
+		//std::cout<<"PASSEI 3"<<endl;
 		if(bounces<maxbounces) CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
-		std::cout<<"PASSEI 4"<<endl;
+		//std::cout<<"PASSEI 4"<<endl;
 	}
 	else
 	{
@@ -554,7 +554,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 
 		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
 	}
-	std::cout<<"PASSEI 5"<<endl;
+	//std::cout<<"PASSEI 5"<<endl;
 	if (BiDirectionalPT == 2){
 		Ray LightCameraRay;
 		LightCameraRay.position = LightPoint.p;
@@ -564,7 +564,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		Vector3D Normal2;
 		vector<Face> CurrentFaces2;
 		bool hitLight = false;
-		std::cout<<"PASSEI 6"<<endl;
+		//std::cout<<"PASSEI 6"<<endl;
 		for (int i = 0; i < objetos.size(); i++){
 			CurrentObj2 = objetos.at(i);
 			CurrentFaces2 = CurrentObj2.faces;
@@ -579,7 +579,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				}
 			}
 		}
-		std::cout<<"PASSEI 7"<<endl;
+		//std::cout<<"PASSEI 7"<<endl;
 		if (!hitLight){
 			for (int j = 0; j < camera.faces.size(); j++){
 				Face f = camera.faces.at(j);
@@ -593,8 +593,10 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
 					float imgHeight = scene.window.y1 - scene.window.y0;
 					float imgWidth = scene.window.x1 - scene.window.x0;
-					int i = floor((hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
-					int j = floor((hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
+					int i = floor((inter.hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
+					int j = floor((inter.hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
+					//std::cout<< "Hitpoint:"<<hit_point.x << " "<<hit_point.y<<endl;
+					//std::cout<<"i, j:"<<i<<" "<<j<<endl;
 					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
 					//Calculo das contribuições
 					//Salver cor na matriz de pixels
@@ -602,7 +604,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-	std::cout<<"PASSEI 8"<<endl;
+	//std::cout<<"PASSEI 8"<<endl;
 }
 
 void render(Scene scene, int npaths, int maxDepth, int maxBounces)
@@ -747,6 +749,7 @@ int main()
 	//scene.eye = compute_uvw(scene.eye);
 	objetos = scene.objects;
 	std::cout << "Numero de Obj " << objetos.size();
+	camera.faces.clear();
 	if (BiDirectionalPT == 2)
 	{
 		Face f1;
@@ -754,9 +757,14 @@ int main()
 		Vertex f1v2 = Point(scene.window.x0, scene.window.y0, 0);
 		Vertex f1v3 = Point(scene.window.x1, scene.window.y0, 0);
 		Vertex f1v4 = Point(scene.window.x1, scene.window.y1, 0);
+		
+		//std::cout<<" f1v4 "<<f1v4.x << " "<<f1v4.y <<endl;
 		f1.v1 = &f1v1;
 		f1.v2 = &f1v2;
 		f1.v3 = &f1v3;
+		//std::cout<<" f1v1 "<<f1.v1->x << " "<<f1v1.y <<endl;
+		//std::cout<<" f1v2 "<<f1.v2->x << " "<<f1v2->y <<endl;
+		//std::cout<<" f1v3 "<<f1.v3->x << " "<<f1v3->y <<endl;
 		Face f2;
 		f2.v1 = &f1v1;
 		f2.v2 = &f1v3;
