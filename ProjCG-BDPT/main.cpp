@@ -30,7 +30,7 @@ const bool ApplyTonemapping = false;
 //0 - Sem BiDirectional, Path tracing normal
 //1 - Cada Ponto do LightPath é uma fonte de luz secundária
 //2 - Lançamos o light Path e cada ponto envia um raio para a câmera
-const int BiDirectionalPT = 1;
+const int BiDirectionalPT = 2;
 
 ofstream file;
 Object camera;

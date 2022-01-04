@@ -42,7 +42,3 @@ Color KProdC(float k, Color c){
 	return out;
 }
 
-Color::~Color()
-{
-	// chamada quando delete é utilizado
-}

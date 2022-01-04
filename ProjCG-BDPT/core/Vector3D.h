@@ -23,7 +23,6 @@ Vector3D divisao(Vector3D a, float b);
 Vector3D pointToVector(Point A);
 Point vectorToPoint(Vector3D A);
 float Length(Vector3D res);
-Vector3D random_direction(double u1, double u2, Vector3D normal);
 Vector3D flip_direction(Vector3D res);
 Vector3D Normal(Vertex A ,Vertex B, Vertex C);
 Vector3D KProd(float k, Vector3D c); // Produto de escalar por vetor

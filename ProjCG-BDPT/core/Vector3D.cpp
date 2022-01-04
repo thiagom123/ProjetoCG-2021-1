@@ -67,24 +67,7 @@ Vector3D random_Hemisphere_direction(double u1, double u2, Vector3D N){
 	v = Normalize(v);
 	return v;
 }
-Vector3D sample_direction(double r1, double r2){
-	float sinTheta = sqrtf(1 - r1 * r1); 
-    float phi = 2 * M_PI * r2; 
-    float x = sinTheta * cosf(phi); 
-    float z = sinTheta * sinf(phi); 
-    return Vector3D(x, r1, z); 
-}
 
-Vector3D random_direction(double u1, double u2, Vector3D normal){
-	Vector3D p = sample_direction(u1,u2);
-
-	Vector3D w = normal;
-	Vector3D v = ProdVetorial(Vector3D(0.00319, 1.0, 0.0078),w);
-	v = Normalize(v);
-	Vector3D u = ProdVetorial(v,w);
-	Vector3D hemi_dir = Sumv(Sumv((KProd(p.x,u)),(KProd(p.y,v))),(KProd(p.z,w)));
-	return Normalize(hemi_dir);
-}
 
 float Length(Vector3D res){
 	return sqrt(res.x * res.x + res.y*res.y + res.z*res.z);

@@ -4,8 +4,7 @@
 
 
 bool lerObjeto(const char* path, Objeto &objeto){
-	//O método abaixo foi baseado no cógigo encontrado no tutorial de OpenGL:
-	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
+
 
 	FILE * file = fopen(path, "r");
 	if (file == NULL){
@@ -36,8 +35,7 @@ bool lerObjeto(const char* path, Objeto &objeto){
 		else if (strcmp(lineHeader, "f") == 0){
 			std::string vertex1, vertex2, vertex3;
 			unsigned int vertexIndex[3];
-			//ACHO QUE NÃO ESTÁ SENDO USADO esse matches
-			int matches = fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
+			fscanf(file, "%d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2]);
 
 			Face t;
 			t.v1Index = vertexIndex[0];

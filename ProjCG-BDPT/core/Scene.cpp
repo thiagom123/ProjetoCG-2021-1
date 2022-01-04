@@ -23,8 +23,6 @@ Eye compute_uvw(Eye eye){
 
 bool LoadScene(const char* path, Scene &Scene){
 
-    //O método abaixo foi baseado no cógigo encontrado no tutorial de OpenGL:
-	//http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
 
     FILE * file = fopen(path, "r");

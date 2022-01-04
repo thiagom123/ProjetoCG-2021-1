@@ -10,7 +10,6 @@ public:
 	Color(Vector3D v);
 
 	Vector3D toVetor();
-	~Color();
 };
 
 Color csum(Color c1, Color c2);
