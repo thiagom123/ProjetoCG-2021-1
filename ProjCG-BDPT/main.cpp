@@ -17,7 +17,7 @@
 vector<Objeto> objetos;
 //Alguns parâmetros
 const int mDepth = 5;
-const int mBounces = 4;
+const int mBounces = 3;
 const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos = false;
 const int NShadow_Ray = 5;
@@ -472,7 +472,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-
+	std::cout<<"PASSEI 1"<<endl;
 	if (hit == false)
 	{
 		if (BiDirectionalPT == 2)
@@ -489,8 +489,8 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				{
 					//std::cout << "Hit" << std::endl;
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
-					float imgHeight = scene.window.y1 - scene.window.y0;
-					float imgWidth = scene.window.x1 - scene.window.x0;
+					float imgHeight = 2.0;
+					float imgWidth = 2.0;
 					int i = floor((hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
 					int j = floor((hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
 					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
@@ -501,7 +501,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		}
 		return;
 	}
-
+	std::cout<<"PASSEI 2"<<endl;
 	LightPoint.p = vectorToPoint(hit_point);
 	//Possivelmente armazenar características do objeto em que houve intersecção
 	//Fizemos apenas o difuso e a transmissão
@@ -509,53 +509,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 	float r = rand01(0, 1) * ktot;
 	Ray new_ray;
 
-	if (BiDirectionalPT == 2){
-		Ray LightCameraRay;
-		LightCameraRay.position = LightPoint.p;
-		Vector3D olho = Vector3D(scene.eye.x, scene.eye.y, scene.eye.z);
-		LightCameraRay.direction = Normalize(Subv(olho, pointToVector(LightCameraRay.position)));
-		Object CurrentObj2;
-		Vector3D Normal2;
-		vector<Face> CurrentFaces2;
-		bool hitLight = false;
-		for (int i = 0; i < objetos.size(); i++){
-			CurrentObj2 = objetos.at(i);
-			CurrentFaces2 = CurrentObj2.faces;
-			for (int j = 0; j < CurrentFaces2.size(); j++){
-				Face f2 = CurrentFaces2.at(j);
-				Vertex *P12 = f2.v1;
-				Vertex *P22 = f2.v2;
-				Vertex *P32 = f2.v3;
-				Intersec inter2 = intersection(LightCameraRay, *P12, *P22, *P32);
-				if (inter2.hit){
-					hitLight = true;
-					goto endOfLoop;
-				}
-			}
-		}
-		endOfLoop:
-		if (!hitLight){
-			for (int j = 0; j < camera.faces.size(); j++){
-				Face f = camera.faces.at(j);
-				Vertex *P1 = f.v1;
-				Vertex *P2 = f.v2;
-				Vertex *P3 = f.v3;
-				Intersec inter = intersection(lightRay, *P1, *P2, *P3);
-				//Calcular "i"
-				if (inter.hit){
-					//std::cout << "Hit" << std::endl;
-					//Calcular "i" e "j" da matriz de pixels e adicionar cores
-					float imgHeight = scene.window.y1 - scene.window.y0;
-					float imgWidth = scene.window.x1 - scene.window.x0;
-					int i = floor((hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
-					int j = floor((hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
-					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
-					//Calculo das contribuições
-					//Salver cor na matriz de pixels
-				}
-			}
-		}
-	}
+
 	if (r < ClosestObj.kd)
 	{
 		float x = rand01(0, 1);
@@ -569,7 +523,9 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		corAtualRaio.g = corAtualRaio.g * ClosestObj.color.g * ClosestObj.kd*cossenoAng;
 		LightPoint.c = corAtualRaio;
 		LightPath.push_back(LightPoint);
-		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
+		std::cout<<"PASSEI 3"<<endl;
+		if(bounces<maxbounces) CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
+		std::cout<<"PASSEI 4"<<endl;
 	}
 	else
 	{
@@ -598,6 +554,55 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 
 		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
 	}
+	std::cout<<"PASSEI 5"<<endl;
+	if (BiDirectionalPT == 2){
+		Ray LightCameraRay;
+		LightCameraRay.position = LightPoint.p;
+		Vector3D olho = Vector3D(scene.eye.x, scene.eye.y, scene.eye.z);
+		LightCameraRay.direction = Normalize(Subv(olho, pointToVector(LightCameraRay.position)));
+		Object CurrentObj2;
+		Vector3D Normal2;
+		vector<Face> CurrentFaces2;
+		bool hitLight = false;
+		std::cout<<"PASSEI 6"<<endl;
+		for (int i = 0; i < objetos.size(); i++){
+			CurrentObj2 = objetos.at(i);
+			CurrentFaces2 = CurrentObj2.faces;
+			for (int j = 0; j < CurrentFaces2.size(); j++){
+				Face f2 = CurrentFaces2.at(j);
+				Vertex *P12 = f2.v1;
+				Vertex *P22 = f2.v2;
+				Vertex *P32 = f2.v3;
+				Intersec inter2 = intersection(LightCameraRay, *P12, *P22, *P32);
+				if (inter2.hit){
+					hitLight = true;
+				}
+			}
+		}
+		std::cout<<"PASSEI 7"<<endl;
+		if (!hitLight){
+			for (int j = 0; j < camera.faces.size(); j++){
+				Face f = camera.faces.at(j);
+				Vertex *P1 = f.v1;
+				Vertex *P2 = f.v2;
+				Vertex *P3 = f.v3;
+				Intersec inter = intersection(lightRay, *P1, *P2, *P3);
+				//Calcular "i"
+				if (inter.hit){
+					//std::cout << "Hit" << std::endl;
+					//Calcular "i" e "j" da matriz de pixels e adicionar cores
+					float imgHeight = scene.window.y1 - scene.window.y0;
+					float imgWidth = scene.window.x1 - scene.window.x0;
+					int i = floor((hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
+					int j = floor((hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
+					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
+					//Calculo das contribuições
+					//Salver cor na matriz de pixels
+				}
+			}
+		}
+	}
+	std::cout<<"PASSEI 8"<<endl;
 }
 
 void render(Scene scene, int npaths, int maxDepth, int maxBounces)
@@ -658,9 +663,13 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 					LightPath.clear();
 					Vector3D dirLuz = Normal(*scene.light.object->faces.at(0).v1, *scene.light.object->faces.at(0).v2, *scene.light.object->faces.at(0).v3);
 					lightRay.direction = random_Hemisphere_direction(u1, u2, dirLuz);
+					//std::cout<<"TESTE 1 "<<i<< " "<<j<<endl;
 					CalcularLightPath(scene, lightRay, 0, maxBounces, scene.light.color);
+					//std::cout<<"TESTE 2 "<<i<< " "<<j<<endl;
+					
 				}
 				colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye, LightPath);
+				//std::cout<<"TESTE 2 "<<i<< " "<<j<<endl;
 				colorEyePath[i][j] = csum(colorEyePath[i][j], colorAux);
 				//std::cout << "TesteDepois" << std::endl;
 			}
@@ -673,6 +682,7 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 				colorLightPath[i][j].g = colorLightPath[i][j].g / npaths;
 				colorLightPath[i][j].b = colorLightPath[i][j].b / npaths;
 			}
+			//std::cout<<"TESTE 3 "<<i<< " "<<j<<endl;
 		}
 		std::cout << "[";
 		int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
