@@ -18,7 +18,7 @@ vector<Objeto> objetos;
 //Alguns parâmetros
 const int mDepth = 5;
 const int mBounces = 4;
-const bool UsarShadowRay = false;
+const bool UsarShadowRay = true;
 const bool ShadowRayEmTodos = false;
 const int NShadow_Ray = 5;
 const int nPaths = 20;
@@ -286,19 +286,22 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	//Shadow Ray para o LightPath
 
 	if (BiDirectionalPT == 1)
-	{
+	{	
+		//std::cout<<"TESTE 1"<<endl;
 		int NLightPoints = LightPath.size();
+		std::cout<<"NLIGHT "<<NLightPoints<<endl;
 		for (int k = 0; k < NLightPoints; k++)
 		{
+			//std::cout<<"TESTE 2"<<endl;
 			dist2 = 100000000;
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint, hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias, normal), Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			shadow_ray2.direction = luz;
-			//bool hit2 = false;
+			bool hit2 = false;
 			Object ClosestObj2;
-			ClosestObj2.isLight = false;
+			//ClosestObj2.isLight = false;
 			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 			Object CurrentObj2;
 			Vector3D Normal2;
@@ -316,33 +319,28 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 						Vertex *P22 = f2.v2;
 						Vertex *P32 = f2.v3;
 						Intersec inter2 = intersection(shadow_ray2, *P12, *P22, *P32);
-						if (inter2.hit && inter2.distance < dist2)
+						if (inter2.hit)
 						{
-							dist2 = inter2.distance;
-							ClosestObj2 = CurrentObj2;
-							hit2 = inter2.hit;
-							Normal2 = inter2.normal;
-							//Normal2 = KProd(bias,inter2.normal);
-							//Armazena o objeto mais próximo
+							hit2 = true;
 						}
 					}
 				}
 			}
-			//std::cout << ClosestObj2.isLight <<endl;
-			//Se o mais próximo for a luz
-			if (ClosestObj2.isLight)
+			if (!hit2)
 			{
 				//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
 				float lp2 = scene.light.lp;
 				float kd = ClosestObj.kd;
 				float cossenoAng = ProdEscalar(normal, luz);
-				if (cossenoAng < 0)
+				if (cossenoAng < 0){
 					cossenoAng = (-1) * cossenoAng;
-				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
+				}
+					
 
-				ColorBiDirectional.r += lp2 * kd * cossenoAng * scene.light.color.r / ((float)NLightPoints);
-				ColorBiDirectional.g += lp2 * kd * cossenoAng * scene.light.color.g / ((float)NLightPoints);
-				ColorBiDirectional.b += lp2 * kd * cossenoAng * scene.light.color.b / ((float)NLightPoints);
+				ColorBiDirectional.r += lp2 * kd * cossenoAng * scene.light.color.r*ClosestObj.color.r / ((float)NLightPoints);
+				ColorBiDirectional.g += lp2 * kd * cossenoAng * scene.light.color.g*ClosestObj.color.r / ((float)NLightPoints);
+				ColorBiDirectional.b += lp2 * kd * cossenoAng * scene.light.color.b*ClosestObj.color.r / ((float)NLightPoints);
+				std:: cout<< "COLOR BD.r  "<<ColorBiDirectional.r<<endl;
 			}
 		}
 	}
@@ -558,10 +556,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-	if (bounces == maxbounces)
-	{
-		return;
-	}
 	if (r < ClosestObj.kd)
 	{
 		float x = rand01(0, 1);
@@ -742,7 +736,7 @@ int main()
 	//Acho que está sem usar
 	//scene.eye = compute_uvw(scene.eye);
 	objetos = scene.objects;
-	cout << "Numero de Obj " << objetos.size();
+	std::cout << "Numero de Obj " << objetos.size();
 	if (BiDirectionalPT == 2)
 	{
 		Face f1;
@@ -774,7 +768,7 @@ int main()
 		objPath += objetos.at(i).path;
 		//std::cout << objPath << std::endl;
 		lerObjeto(objPath.c_str(), objetos.at(i));
-		cout << "Objeto: " << i << endl;
+		std::cout << "Objeto: " << i << endl;
 		//objetos.at(i).normalVertice();
 	}
 	scene.light.object = &objetos.at(0);
