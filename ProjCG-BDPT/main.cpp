@@ -16,21 +16,22 @@
 
 vector<Objeto> objetos;
 //Alguns parâmetros
-const int mDepth = 5;
-const int mBounces = 3;
-const bool UsarShadowRay = false;
-const bool ShadowRayEmTodos = false;
-const int NShadow_Ray = 5;
-const int nPaths = 60;
-const int CornellBox = 2;
-const bool ApplyTonemapping = false;
-
+int mDepth = -1;
+int mBounces = -1;
+bool UsarShadowRay = false;
+bool ShadowRayEmTodos = false;
+int NShadow_Ray = -1;
+int nPaths = -1;
+int CornellBox = -1;
+bool ApplyTonemapping = false;
+int janelaX = -1;
+int janelaY = -1;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 - Sem BiDirectional, Path tracing normal
 //1 - Cada Ponto do LightPath é uma fonte de luz secundária
 //2 - Lançamos o light Path e cada ponto envia um raio para a câmera
-const int BiDirectionalPT = 1;
+int BiDirectionalPT = -1;
 
 ofstream file;
 Object camera;
@@ -660,16 +661,85 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 	}
 }
 
+void init(){
+	do{
+		std::cout << "Defina a profundidade: " << std::endl;
+		std::cin >> mDepth;
+
+	}while(mDepth <= 0);
+	char aux;
+	do{
+		std::cout << "Deseja usar shadowray?: Y/n " << std::endl;
+		std::cin >> aux;
+		if(tolower(aux) == 'y'){
+			UsarShadowRay = true;
+		}else{
+			UsarShadowRay = false;
+		}
+	}while(!(aux == 'n' || aux == 'y'));
+	if(UsarShadowRay){
+		char aux2;
+		do{
+			std::cout << "Deseja usar o shadowray em todas as profundidades?: Y/n " << std::endl;
+			std::cin >> aux2;
+			if(tolower(aux2) == 'y'){
+				ShadowRayEmTodos = true;
+			}else{
+				ShadowRayEmTodos = false;
+			}
+		}while(!(aux2 == 'n' || aux2 == 'y'));		
+		do{
+			std::cout << "Defina a quantidade de shadowrays: " << std::endl;
+			std::cin >> NShadow_Ray;
+
+		}while(NShadow_Ray < 0);
+	}
+	do{
+		std::cout << "Defina qual cornellbox usar (1 - padrao do material, 2 - fonte de luz deslocada \"sanca\"): "  << std::endl;
+		std::cin >> CornellBox;
+	}while(CornellBox > 2 || CornellBox < 1);
+	char aux3;
+	do{
+		std::cout << "Deseja aplicar o Tonemapping? Y/n" << std::endl;
+		std::cin >> aux3;
+		if(tolower(aux3) == 'y'){
+			ApplyTonemapping = true;
+		}else{
+			ApplyTonemapping = false;
+		}
+	}while(!(aux3 == 'n' || aux3 == 'y'));
+	do{
+		std::cout << "Defina a quantidade de amostras por pixel: " << std::endl;
+		std::cin >> nPaths;
+	}while(nPaths <= 0);
+	do{
+		std::cout << "Qual algoritmo de iluminacao você quer usar:\n" << "0 - Path Tracing padrao\n1 - Cada Ponto do LightPath e uma fonte de luz secundaria\n2 - Lançamos o light Path e cada ponto envia um raio para a camera" << std::endl;
+		std::cin >> BiDirectionalPT;
+		
+		if(BiDirectionalPT > 0){
+			std::cout << "Defina a quantidade de bounces: " << std::endl;
+			std::cin >> mBounces;
+		}
+	}while(BiDirectionalPT > 2 || BiDirectionalPT < 0);
+	do{
+		std::cout << "Defina o tamanho da largura (width) da imagem: " << std::endl;
+		std::cin >> janelaX;
+		std::cout << "Defina o tamanho da altura (height) da imagem: " << std::endl;
+		std::cin >> janelaY;
+	}while(janelaX <= 0 || janelaY <= 0);
+}
 /*
 O verdadeiro main*/
 int main()
 {
+	init();
 	Scene scene;
 	if (CornellBox == 1)
 		bool temp = LoadScene("cornell_box\\cornellroom.sdl", scene);
 	else if (CornellBox == 2)
 		bool temp = LoadScene("cornell_box_2\\cornellroom.sdl", scene);
-
+	scene.window.nPixelX = janelaX;
+	scene.window.nPixelY = janelaY;
 	for (int i = 0; i < scene.window.nPixelX; i++)
 	{
 		for (int j = 0; j < scene.window.nPixelY; j++)
@@ -681,7 +751,7 @@ int main()
 
 	//scene.eye = compute_uvw(scene.eye);
 	objetos = scene.objects;
-	std::cout << "Numero de Obj " << objetos.size();
+	//std::cout << "Numero de Obj " << objetos.size();
 	camera.faces.clear();
 	if (BiDirectionalPT == 2)
 	{
@@ -701,7 +771,7 @@ int main()
 		camera.faces.push_back(f2);
 	}
 
-	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b << " npath " << scene.npaths << " tonemap " << scene.tonemapping << " seed " << scene.seed << endl;
+	//std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b << " npath " << scene.npaths << " tonemap " << scene.tonemapping << " seed " << scene.seed << endl;
 	for (int i = 0; i < scene.objects.size(); i++)
 	{
 		std::string objPath;
@@ -711,7 +781,7 @@ int main()
 			objPath = "cornell_box_2\\";
 		objPath += objetos.at(i).path;
 		lerObjeto(objPath.c_str(), objetos.at(i));
-		std::cout << "Objeto: " << i << endl;
+		//std::cout << "Objeto: " << i << endl;
 	}
 	scene.light.object = &objetos.at(0);
 	render(scene, nPaths, mDepth, mBounces);
