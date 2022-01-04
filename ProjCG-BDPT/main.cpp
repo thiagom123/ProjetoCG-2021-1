@@ -17,9 +17,9 @@
 vector<Objeto> objetos;
 const int mDepth = 5;
 const int mBounces = 2;
-const bool ShadowRayEmTodos=false;
+const bool ShadowRayEmTodos=true;
 const int nPaths = 20;
-const int CornellBox = 1;
+const int CornellBox = 2;
 const bool ApplyTonemapping = true;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
@@ -143,6 +143,9 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float dist3 = 100000000;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
     Vector3D normal = Vector3D(0.0, 0.0, 0.0);
+	Color ColorBiDirectional = Color(0,0,0);
+	Color ColorShadow 	= Color(0,0,0);
+	Color ColorLocal = Color(0,0,0);
 	float temLuz = 1.0;
 	bool hit = false;
 	Object ClosestObj;
@@ -173,13 +176,13 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	if(ClosestObj.isLight){
 			return KProdC(ClosestObj.lp, ClosestObj.color);
 	}
-
+	
 
 	//Shadow Ray
-	Color ColorLocal = Color(0,0,0);
+
 	bool shadow = true;
 	float lpShadow = 0.0;
-	Color ColorShadow 	= Color(0,0,0);
+	
 	//Lança Vários Shadow ray
 	float xMin = objetos.at(0).vertexs.at(0).x;
 	float xMax = objetos.at(0).vertexs.at(2).x;
@@ -197,7 +200,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//float lz = zMin + (kz+0.5)*(zMax-zMin)/RaizNShadow_Ray;
 			lx = rand01(xMin, xMax);
 			lz = rand01(zMin, zMax);
-			ly = 3.8360;
 			//std::cout<< "x:" << " " << xMin << " " << xMax<<endl;
 			//std::cout<< "z:" << " " << zMin << " " << zMax<<endl;
 			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
@@ -207,6 +209,58 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			//lz = -24.906;
 			dist2 = 100000000;
 			Vector3D luz = Normalize(Subv(Vector3D(lx,ly,lz),hit_point));
+			Ray shadow_ray2;
+			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
+			shadow_ray2.direction = luz;
+			//bool hit2 = false;
+			Object ClosestObj2;
+			ClosestObj2.isLight  = false;
+			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
+			Object CurrentObj2;
+			Vector3D Normal2;
+			vector<Face> CurrentFaces2;
+			for(int i=0; i < objetos.size();i++){
+				CurrentObj2 = objetos.at(i);
+				CurrentFaces2 = CurrentObj2.faces;
+				for(int j=0;j<CurrentFaces2.size();j++){
+					Face f2 = CurrentFaces2.at(j);
+                    Vertex* P12 = f2.v1;
+                    Vertex* P22 = f2.v2;
+                    Vertex* P32 = f2.v3;
+                    Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
+                    if(inter2.hit && inter2.distance < dist2){
+                        dist2 = inter2.distance;
+                        ClosestObj2 = CurrentObj2;
+                        hit2 = inter2.hit;
+                        Normal2 = inter2.normal;
+                        //Normal2 = KProd(bias,inter2.normal);
+                        //Armazena o objeto mais próximo
+
+                    }
+				}
+			}
+			//std::cout << ClosestObj2.isLight <<endl;
+			//Se o mais próximo for a luz
+			if(ClosestObj2.isLight){
+				//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
+				float lp2= scene.light.lp;
+				float kd = ClosestObj.kd;
+				float cossenoAng = ProdEscalar(normal, luz);
+				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
+				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
+				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r*ClosestObj.color.r/((float)NShadow_Ray);
+				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g*ClosestObj.color.g/((float)NShadow_Ray);
+				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b*ClosestObj.color.b/((float)NShadow_Ray);		
+			}	
+		}
+	}
+	//Shadow Ray para o LightPath
+	
+	if(BiDirectionalPT==1){
+		for (int k = 0; k < LightPath.size(); k++){
+			dist2 = 100000000;
+			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
+			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			shadow_ray2.direction = luz;
@@ -248,58 +302,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				float cossenoAng = ProdEscalar(normal, luz);
 				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
 				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
-				ColorShadow.r += lp2*kd*cossenoAng*scene.light.color.r*ClosestObj.color.r/((float)NShadow_Ray);
-				ColorShadow.g += lp2*kd*cossenoAng*scene.light.color.g*ClosestObj.color.g/((float)NShadow_Ray);
-				ColorShadow.b += lp2*kd*cossenoAng*scene.light.color.b*ClosestObj.color.b/((float)NShadow_Ray);		
-			}	
-		}
-	}
-	//Shadow Ray para o LightPath
-	Color ColorBiDirectional = Color(0,0,0);
-	if(BiDirectionalPT==1){
-		for (int k = 0; k < LightPath.size(); k++){
-			dist2 = 100000000;
-			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
-			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
-			Ray shadow_ray2;
-			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
-			shadow_ray2.direction = luz;
-			//bool hit2 = false;
-			Object ClosestObj2;
-			ClosestObj2.isLight  = false;
-			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
-			Object CurrentObj2;
-			Vector3D Normal2;
-			vector<Face> CurrentFaces2;
-			for(int i=0; i < objetos.size();i++){
-				CurrentObj2 = objetos.at(i);
-				CurrentFaces2 = CurrentObj2.faces;
-				for(int j=0;j<CurrentFaces2.size();j++){
-					Face f2 = CurrentFaces2.at(j);
-					Vertex* P12 = f2.v1;
-					Vertex* P22 = f2.v2;
-					Vertex* P32 = f2.v3;
-					Intersec inter2 = intersection(shadow_ray2,*P12,*P22,*P32);
-					if(inter2.hit && inter2.distance < dist2){
-						dist2 = inter2.distance;
-						ClosestObj2 = CurrentObj2;
-						hit2 = inter2.hit;
-						Normal2 = inter2.normal;
-						//Normal2 = KProd(bias,inter2.normal);
-						//Armazena o objeto mais próximo
-										
-					}
-				}
-			}
-			//std::cout << ClosestObj2.isLight <<endl;
-			//Se o mais próximo for a luz
-			if(ClosestObj2.isLight){
-				//Atenção: Pegamos o lp da luz, mas o kd do ponto em que estamos calculando
-				float lp2= scene.light.lp;
-				float kd = ClosestObj.kd;
-				float cossenoAng = ProdEscalar(normal, luz);
-				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
-				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
 				ColorBiDirectional.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
 				ColorBiDirectional.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
 				ColorBiDirectional.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
@@ -325,11 +327,11 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			//ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
+			ColorIndireto = trace_ray(new_ray,scene, depth+1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
 			//Tem que multiplicar pela cor do objeto
-			//ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
-			//ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
-			//ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kd;
+			ColorIndireto.r = ColorIndireto.r*ClosestObj.color.r*ClosestObj.kd;
+			ColorIndireto.b = ColorIndireto.b*ClosestObj.color.b*ClosestObj.kd;
+			ColorIndireto.g = ColorIndireto.g*ClosestObj.color.g*ClosestObj.kd;
 		}else if(r < ClosestObj.kd + ClosestObj.ks){
 			Vector3D L = Normalize(flip_direction(ray.direction));			
 			Vector3D N = calcularNormal(ClosestObj.faces.at(0).v1,ClosestObj.faces.at(0).v2,ClosestObj.faces.at(0).v3);
