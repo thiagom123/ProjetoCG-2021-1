@@ -13,19 +13,24 @@
 #include "core\Color.h"
 #include "core\Face.h"
 #define PI 3.14159265358979323846 /* pi */
-//const float view_dist = 600.0;
+
 vector<Objeto> objetos;
+//Alguns parâmetros
 const int mDepth = 5;
 const int mBounces = 4;
 const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos = false;
+const int NShadow_Ray = 5;
 const int nPaths = 20;
 const int CornellBox = 2;
-const bool ApplyTonemapping = true;
+const bool ApplyTonemapping = false;
+
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
-//0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
-const int BiDirectionalPT = 2;
+//0 - Sem BiDirectional, Path tracing normal
+//1 - Cada Ponto do LightPath é uma fonte de luz secundária
+//2 - Lançamos o light Path e cada ponto envia um raio para a câmera
+const int BiDirectionalPT = 1;
 
 ofstream file;
 Object camera;
@@ -34,6 +39,7 @@ Color colorEyePath[400][400];
 
 struct Intersec
 {
+	//Struct que serve como Retorno da função de Intersecção
 public:
 	bool hit;
 	float distance;
@@ -49,19 +55,18 @@ public:
 };
 struct LightPathPoint
 {
+	//Pontos do Light Path (Path que sai da Luz no Bidirectional)
 	Point p;
 	Color c;
 	int objectIndex;
 	int faceIndex;
 };
-struct EyePath
-{
-	bool HitLight;
-};
+
 vector<LightPathPoint> LightPath;
 
 float rand01(float lo, float hi)
-{
+{	
+	//Essa função gera um número aleatório de 0 a 1
 	std::random_device rd;	// Will be used to obtain a seed for the random number engine
 	std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
 	std::uniform_real_distribution<> dis(lo, hi);
@@ -70,6 +75,7 @@ float rand01(float lo, float hi)
 
 Vector3D calcularRefracao(float n1, float n2, Vetor i, Vetor n)
 {
+	//Calcula a direção do raio após a refração
 	float cosI = -ProdEscalar(i, n);
 
 	float sen2t = pow(n1 / n2, 2) * (1 - pow(cosI, 2));
@@ -80,6 +86,7 @@ Vector3D calcularRefracao(float n1, float n2, Vetor i, Vetor n)
 
 Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 {
+	//Verificar se o raio intersecta o triângulo e calcula o ponto de intersecção
 	Vector3D r = Normalize(ray.direction);
 	Vector3D temp = Normal(A, B, C);
 	//std::cout << "X: " << temp.x << " Y: " << temp.y << " Z: " << temp.z << endl;
@@ -148,8 +155,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	if (depth > MaxDepth)
 		return Color(0, 0, 0);
 	float lp = scene.light.lp;
-	int RaizNShadow_Ray = 3;
-	int NShadow_Ray = RaizNShadow_Ray * RaizNShadow_Ray;
 	float dist = 100000000;
 	float dist2 = 100000000;
 	float dist3 = 100000000;
@@ -384,29 +389,29 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		else
 		{
 			float cos = ProdEscalar(ray.direction, normal);
-			float n1, n2;
-			Vector3D dir;
-			if (cos > 0)
-			{
-				//Está saindo do objeto
-				n1 = ClosestObj.coeficienteRefracao;
-				n2 = 1;
-				dir = calcularRefracao(n1, n2, ray.direction, KProd(-1, normal));
-				normal = KProd(-1, normal);
-			}
-			else
-			{
-				//Entrando no Objeto
-				n1 = 1;
-				n2 = ClosestObj.coeficienteRefracao;
-				dir = calcularRefracao(n1, n2, ray.direction, normal);
-				normal = KProd(-1, normal);
-			}
+            float n1, n2;
+            Vector3D dir;
+            if (cos > 0)
+            {
+                //Está saindo do objeto
+                n1 = ClosestObj.coeficienteRefracao;
+                n2 = 1;
+                dir = calcularRefracao(n1, n2, ray.direction, KProd(-1, normal));
+                normal = KProd(-1, normal);
+            }
+            else
+            {
+                //Entrando no Objeto
+                n1 = 1;
+                n2 = ClosestObj.coeficienteRefracao;
+                dir = calcularRefracao(n1, n2, ray.direction, normal);
+                
+            }
 
-			Vetor dist2 = KProd(bias, normal);
-			new_ray.position = vectorToPoint(Sumv(hit_point, dist2));
-			new_ray.direction = Normalize(dir);
-			ColorIndireto = trace_ray(new_ray, scene, depth + 1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
+            Vetor dist2 = KProd(bias, normal);
+            new_ray.position = vectorToPoint(Subv(hit_point, dist2));
+            new_ray.direction = Normalize(dir);
+            ColorIndireto = trace_ray(new_ray, scene, depth + 1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
 		}
 	}
 	return csum(ColorDireta, ColorIndireto);
@@ -484,7 +489,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				//Calcular "i"
 				if (inter.hit)
 				{
-					std::cout << "Hit" << std::endl;
+					//std::cout << "Hit" << std::endl;
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
 					float imgHeight = scene.window.y1 - scene.window.y0;
 					float imgWidth = scene.window.x1 - scene.window.x0;
@@ -540,7 +545,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				Intersec inter = intersection(lightRay, *P1, *P2, *P3);
 				//Calcular "i"
 				if (inter.hit){
-					std::cout << "Hit" << std::endl;
+					//std::cout << "Hit" << std::endl;
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
 					float imgHeight = scene.window.y1 - scene.window.y0;
 					float imgWidth = scene.window.x1 - scene.window.x0;
