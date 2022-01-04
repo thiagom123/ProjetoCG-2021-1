@@ -16,15 +16,15 @@
 //const float view_dist = 600.0;
 vector<Objeto> objetos;
 const int mDepth = 5;
-const int mBounces = 2;
-const bool ShadowRayEmTodos=true;
+const int mBounces = 4;
+const bool ShadowRayEmTodos=false;
 const int nPaths = 20;
 const int CornellBox = 2;
 const bool ApplyTonemapping = true;
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 = Nãõ tem BPDT, 1 = "Shadow Ray do light path"
-const int BiDirectionalPT = 0;
+const int BiDirectionalPT = 1;
 
 ofstream file;
 Object camera;
@@ -191,7 +191,8 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float ly = objetos.at(0).vertexs.at(0).y;
 	bool hit2 = false;
 	float lx, lz;
-	if(depth == 0 || ShadowRayEmTodos==true){
+	
+	if((depth == 0 || ShadowRayEmTodos==true) && BiDirectionalPT==0){
 		for (int k = 0; k < NShadow_Ray; k++){
 			//int kx = k%RaizNShadow_Ray;
 			//int kz = floor(k/RaizNShadow_Ray);
@@ -254,10 +255,12 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			}	
 		}
 	}
+	
 	//Shadow Ray para o LightPath
 	
 	if(BiDirectionalPT==1){
-		for (int k = 0; k < LightPath.size(); k++){
+		int NLightPoints = LightPath.size();
+		for(int k = 0; k < NLightPoints; k++){
 			dist2 = 100000000;
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint,hit_point));
@@ -275,7 +278,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				CurrentObj2 = objetos.at(i);
 				CurrentFaces2 = CurrentObj2.faces;
 				for(int j=0;j<CurrentFaces2.size();j++){
-					if(!(LightPath.at(k).objectIndex == i && LightPath.at(k).faceIndex == 1)){
+					if(!(LightPath.at(k).objectIndex == i && LightPath.at(k).faceIndex == j)){
                         Face f2 = CurrentFaces2.at(j);
                         Vertex* P12 = f2.v1;
                         Vertex* P22 = f2.v2;
@@ -302,22 +305,23 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				float cossenoAng = ProdEscalar(normal, luz);
 				if(cossenoAng<0) cossenoAng = (-1)*cossenoAng;
 				//ColorShadow vai ser a média dos lp2*kd*cossenoAng*scene.light.color.r/g/b
-				ColorBiDirectional.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NShadow_Ray);
-				ColorBiDirectional.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NShadow_Ray);
-				ColorBiDirectional.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NShadow_Ray);		
+				
+				ColorBiDirectional.r += lp2*kd*cossenoAng*scene.light.color.r/((float)NLightPoints);
+				ColorBiDirectional.g += lp2*kd*cossenoAng*scene.light.color.g/((float)NLightPoints);
+				ColorBiDirectional.b += lp2*kd*cossenoAng*scene.light.color.b/((float)NLightPoints);		
 			}			
 		}
 	}
 	
 	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
 	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);			
-	ColorAmbiente = Color(0,0,0);
-	Color ColorDireta = csum(ColorAmbiente, ColorShadow);
+	if(CornellBox==2) ColorAmbiente = Color(0,0,0);
+	Color ColorDireta = csum(csum(ColorAmbiente, ColorShadow), ColorBiDirectional);
 	//std::cout<<"Color:" << " "<<ColorDireta.r << " " <<ColorDireta.g << " "<<ColorDireta.b <<endl;
 	//return ColorDireta;
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
-	Color ColorIndireto;
+	Color ColorIndireto=Color(0,0,0);
 	Ray new_ray;
 	if(depth < MaxDepth){
 		if(r < ClosestObj.kd){
@@ -392,6 +396,7 @@ Color Tonemapping(Color pixel, float tmapping){
 
 void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, Color corAtualRaio){
 	float bias = 1e-4;
+	LightPathPoint LightPoint;
 	if (bounces > maxbounces) return;
 	float lp = scene.light.lp;
 	float dist = 10000000;
@@ -417,11 +422,14 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				hit = inter.hit;
 				hit_point = pointToVector(inter.hit_point);
 				normal = inter.normal;
+				LightPoint.objectIndex = i;
+				LightPoint.faceIndex = j;
 			}
         }
     }
 
 	if(hit == false){
+		/*
 		for(int j=0;j<camera.faces.size();j++){
 			Face f = camera.faces.at(j);
             Vertex* P1 = f.v1;
@@ -440,15 +448,16 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				//Calculo das contribuições
 				//Salver cor na matriz de pixels
 			}
-		 }
+		 }*/
 		return;
 	}
-	Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);
+	//Color ColorAmbiente = KProdC( (scene.ambient*ClosestObj.ka), ClosestObj.color);
 
-	LightPathPoint LightPoint;
+	
 	LightPoint.p = vectorToPoint(hit_point);
 	//Possivelmente armazenar características do objeto em que houve intersecção
-	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
+	//Fizemos apenas o difuso e a transmissão
+	float ktot = ClosestObj.kd + ClosestObj.kt;
 	float r = rand01(0,1)*ktot;
 	Ray new_ray;
 	if(r < ClosestObj.kd){
@@ -458,9 +467,9 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			new_ray.position = vectorToPoint(Sumv(KProd(bias,normal),Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
 			//Pode tirar do CSUM
-			corAtualRaio.r = corAtualRaio.r*ClosestObj.color.r*ClosestObj.kd + ColorAmbiente.r;
-			corAtualRaio.b = corAtualRaio.b*ClosestObj.color.b*ClosestObj.kd + ColorAmbiente.b;
-			corAtualRaio.g = corAtualRaio.g*ClosestObj.color.g*ClosestObj.kd + ColorAmbiente.g;
+			corAtualRaio.r = corAtualRaio.r*ClosestObj.color.r*ClosestObj.kd;
+			corAtualRaio.b = corAtualRaio.b*ClosestObj.color.b*ClosestObj.kd;
+			corAtualRaio.g = corAtualRaio.g*ClosestObj.color.g*ClosestObj.kd;
 			LightPoint.c = corAtualRaio;
 			LightPath.push_back(LightPoint);
 			CalcularLightPath(scene,new_ray, bounces+1, maxbounces, corAtualRaio);
