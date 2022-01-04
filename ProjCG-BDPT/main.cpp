@@ -18,7 +18,7 @@ vector<Objeto> objetos;
 //Alguns parâmetros
 const int mDepth = 5;
 const int mBounces = 4;
-const bool UsarShadowRay = true;
+const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos = false;
 const int NShadow_Ray = 5;
 const int nPaths = 20;
@@ -289,7 +289,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	{	
 		//std::cout<<"TESTE 1"<<endl;
 		int NLightPoints = LightPath.size();
-		std::cout<<"NLIGHT "<<NLightPoints<<endl;
+		//std::cout<<"NLIGHT "<<NLightPoints<<endl;
 		for (int k = 0; k < NLightPoints; k++)
 		{
 			//std::cout<<"TESTE 2"<<endl;
@@ -340,7 +340,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				ColorBiDirectional.r += lp2 * kd * cossenoAng * scene.light.color.r*ClosestObj.color.r / ((float)NLightPoints);
 				ColorBiDirectional.g += lp2 * kd * cossenoAng * scene.light.color.g*ClosestObj.color.r / ((float)NLightPoints);
 				ColorBiDirectional.b += lp2 * kd * cossenoAng * scene.light.color.b*ClosestObj.color.r / ((float)NLightPoints);
-				std:: cout<< "COLOR BD.r  "<<ColorBiDirectional.r<<endl;
+				//std:: cout<< "COLOR BD.r  "<<ColorBiDirectional.r<<endl;
 			}
 		}
 	}
@@ -658,7 +658,7 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 					LightPath.clear();
 					Vector3D dirLuz = Normal(*scene.light.object->faces.at(0).v1, *scene.light.object->faces.at(0).v2, *scene.light.object->faces.at(0).v3);
 					lightRay.direction = random_Hemisphere_direction(u1, u2, dirLuz);
-					CalcularLightPath(scene, lightRay, maxBounces, maxBounces, scene.light.color);
+					CalcularLightPath(scene, lightRay, 0, maxBounces, scene.light.color);
 				}
 				colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye, LightPath);
 				colorEyePath[i][j] = csum(colorEyePath[i][j], colorAux);
