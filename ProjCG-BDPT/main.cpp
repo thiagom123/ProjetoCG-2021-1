@@ -18,10 +18,10 @@ vector<Objeto> objetos;
 //Alguns parâmetros
 const int mDepth = 5;
 const int mBounces = 3;
-const bool UsarShadowRay = true;
+const bool UsarShadowRay = false;
 const bool ShadowRayEmTodos = false;
 const int NShadow_Ray = 5;
-const int nPaths = 20;
+const int nPaths = 60;
 const int CornellBox = 2;
 const bool ApplyTonemapping = false;
 
@@ -30,7 +30,7 @@ const bool ApplyTonemapping = false;
 //0 - Sem BiDirectional, Path tracing normal
 //1 - Cada Ponto do LightPath é uma fonte de luz secundária
 //2 - Lançamos o light Path e cada ponto envia um raio para a câmera
-const int BiDirectionalPT = 0;
+const int BiDirectionalPT = 1;
 
 ofstream file;
 Object camera;
@@ -89,7 +89,6 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 	//Verificar se o raio intersecta o triângulo e calcula o ponto de intersecção
 	Vector3D r = Normalize(ray.direction);
 	Vector3D temp = Normal(A, B, C);
-	//std::cout << "X: " << temp.x << " Y: " << temp.y << " Z: " << temp.z << endl;
 	bool hit = false;
 	float distance = 0.0;
 	Point hit_point;
@@ -99,13 +98,8 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 	}
 	Vector3D ray_dir = Normalize(ray.direction);
 	float t = ProdEscalar(temp, DefVector(ray.position, A)) / ProdEscalar(ray_dir, temp);
-
-	//float d = ProdEscalar(temp, pointToVector(A));
-
-	//float t = (d - ProdEscalar(temp,pointToVector(ray.position)))/(ProdEscalar(temp,ray.direction));
 	hit_point = ray.hitpoint(ray, t);
-	//std::cout << "X: " << hit_point.x << " Y: " << hit_point.y << " Z: " << hit_point.z << endl;
-	//std::cout << "T: " << t << std::endl;
+	
 	if (t < 0.0001)
 	{
 		bool hit = false;
@@ -113,7 +107,6 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 		Point hit_point;
 		return Intersec(hit, distance, hit_point, temp);
 	}
-
 	Vector3D vectorAB = DefVector(A, B); //(B-A)
 	Vector3D ac = DefVector(A, C);		 //(C-A)
 	Vector3D vectorBC = DefVector(B, C); //(C-B)
@@ -124,13 +117,9 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 	Vector3D C0 = Subv(pointToVector(hit_point), pointToVector(A)); //(Q-A)
 	Vector3D C1 = Subv(pointToVector(hit_point), pointToVector(B)); //(Q-B)
 	Vector3D C2 = Subv(pointToVector(hit_point), pointToVector(C)); //(Q-C)
-	//Vector3D VecNormalEmQ =
-	//std::cout << ProdEscalar(temp,ProdVetorial(vectorAB,C0)) << endl;
-	//std::cout << ProdEscalar(temp,ProdVetorial(vectorBC,C1)) << endl;
-	//std::cout << ProdEscalar(temp,ProdVetorial(vectorCA,C2)) << endl;
 	if (ProdEscalar(temp, ProdVetorial(vectorAB, C0)) > 0 && ProdEscalar(temp, ProdVetorial(vectorBC, C1)) > 0 && ProdEscalar(temp, ProdVetorial(vectorCA, C2)) > 0)
 	{
-		//std::cout << "Intersecção" << endl;
+
 		hit = true;
 		distance = t;
 		hit_point = ray.hitpoint(ray, t);
@@ -139,7 +128,7 @@ Intersec intersection(Ray ray, Vertex A, Vertex B, Vertex C)
 	}
 	if (ProdEscalar(temp, ProdVetorial(vectorAB, C0)) < 0 && ProdEscalar(temp, ProdVetorial(vectorBC, C1)) < 0 && ProdEscalar(temp, ProdVetorial(vectorCA, C2)) < 0)
 	{
-		//std::cout << "Intersecção" << endl;
+
 		hit = true;
 		distance = t;
 		hit_point = ray.hitpoint(ray, t);
@@ -157,7 +146,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	float lp = scene.light.lp;
 	float dist = 100000000;
 	float dist2 = 100000000;
-	float dist3 = 100000000;
 	Vector3D hit_point = Vector3D(0.0, 0.0, 0.0);
 	Vector3D normal = Vector3D(0.0, 0.0, 0.0);
 	Color ColorBiDirectional = Color(0, 0, 0);
@@ -200,10 +188,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	}
 
 	//Shadow Ray
-
-	bool shadow = true;
-	float lpShadow = 0.0;
-
 	//Lança Vários Shadow ray
 	float xMin = objetos.at(0).vertexs.at(0).x;
 	float xMax = objetos.at(0).vertexs.at(2).x;
@@ -217,29 +201,16 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 	{
 		for (int k = 0; k < NShadow_Ray; k++)
 		{
-			//int kx = k%RaizNShadow_Ray;
-			//int kz = floor(k/RaizNShadow_Ray);
-			//std::cout<<"k: "<< k <<" kx "<< kx <<" kz "<< kz <<endl;
-			//float lx = xMin + (kx+0.5)*(xMax-xMin)/RaizNShadow_Ray;
-			//float lz = zMin + (kz+0.5)*(zMax-zMin)/RaizNShadow_Ray;
+
 			lx = rand01(xMin, xMax);
 			lz = rand01(zMin, zMax);
-			//std::cout<< "x:" << " " << xMin << " " << xMax<<endl;
-			//std::cout<< "z:" << " " << zMin << " " << zMax<<endl;
-			//std::cout<< k <<" "<< kx <<" "<< kz <<endl;
-			//std::cout << "lx:: "<<lx << " ly:"<< ly <<" lz:"<< lz <<endl;
-			//lx = 0;
-			//ly = 3.8360;
-			//lz = -24.906;
 			dist2 = 100000000;
 			Vector3D luz = Normalize(Subv(Vector3D(lx, ly, lz), hit_point));
 			Ray shadow_ray2;
 			shadow_ray2.position = vectorToPoint(Sumv(KProd(bias, normal), Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			shadow_ray2.direction = luz;
-			//bool hit2 = false;
 			Object ClosestObj2;
 			ClosestObj2.isLight = false;
-			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 			Object CurrentObj2;
 			Vector3D Normal2;
 			vector<Face> CurrentFaces2;
@@ -256,16 +227,15 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 					Intersec inter2 = intersection(shadow_ray2, *P12, *P22, *P32);
 					if (inter2.hit && inter2.distance < dist2)
 					{
+						//Armazena o objeto mais próximo
 						dist2 = inter2.distance;
 						ClosestObj2 = CurrentObj2;
 						hit2 = inter2.hit;
 						Normal2 = inter2.normal;
-						//Normal2 = KProd(bias,inter2.normal);
-						//Armazena o objeto mais próximo
+						
 					}
 				}
 			}
-			//std::cout << ClosestObj2.isLight <<endl;
 			//Se o mais próximo for a luz
 			if (ClosestObj2.isLight)
 			{
@@ -283,16 +253,13 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 		}
 	}
 
-	//Shadow Ray para o LightPath
+	//Bidirectional 1
 
 	if (BiDirectionalPT == 1)
 	{	
-		//std::cout<<"TESTE 1"<<endl;
 		int NLightPoints = LightPath.size();
-		//std::cout<<"NLIGHT "<<NLightPoints<<endl;
 		for (int k = 0; k < NLightPoints; k++)
 		{
-			//std::cout<<"TESTE 2"<<endl;
 			dist2 = 100000000;
 			Vector3D LightPoint = pointToVector(LightPath.at(k).p);
 			Vector3D luz = Normalize(Subv(LightPoint, hit_point));
@@ -301,8 +268,6 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			shadow_ray2.direction = luz;
 			bool hit2 = false;
 			Object ClosestObj2;
-			//ClosestObj2.isLight = false;
-			//Obs: Se colocar para inicializar como false, ele vai dar falso para todos os objetos
 			Object CurrentObj2;
 			Vector3D Normal2;
 			vector<Face> CurrentFaces2;
@@ -340,18 +305,16 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 				ColorBiDirectional.r += lp2 * kd * cossenoAng * scene.light.color.r*ClosestObj.color.r / ((float)NLightPoints);
 				ColorBiDirectional.g += lp2 * kd * cossenoAng * scene.light.color.g*ClosestObj.color.r / ((float)NLightPoints);
 				ColorBiDirectional.b += lp2 * kd * cossenoAng * scene.light.color.b*ClosestObj.color.r / ((float)NLightPoints);
-				//std:: cout<< "COLOR BD.r  "<<ColorBiDirectional.r<<endl;
+
 			}
 		}
 	}
 
-	//std::cout<<"Shadow Color:" << " "<<ColorShadow.r << " " <<ColorShadow.g << " "<<ColorShadow.b <<endl;
+
 	Color ColorAmbiente = KProdC((scene.ambient * ClosestObj.ka), ClosestObj.color);
 	if (CornellBox == 2)
 		ColorAmbiente = Color(0, 0, 0);
 	Color ColorDireta = csum(csum(ColorAmbiente, ColorShadow), ColorBiDirectional);
-	//std::cout<<"Color:" << " "<<ColorDireta.r << " " <<ColorDireta.g << " "<<ColorDireta.b <<endl;
-	//return ColorDireta;
 	float ktot = ClosestObj.kd + ClosestObj.ks + ClosestObj.kt;
 	float r = rand01(0, 1) * ktot;
 	Color ColorIndireto = Color(0, 0, 0);
@@ -365,9 +328,7 @@ Color trace_ray(Ray ray, Scene scene, int depth, float nRefractedInitial, int Ma
 			Vector3D dir = random_Hemisphere_direction(x, y, normal);
 			new_ray.position = vectorToPoint(Sumv(KProd(bias, normal), Vector3D(hit_point.x, hit_point.y, hit_point.z)));
 			new_ray.direction = Normalize(dir);
-			//Pode tirar do CSUM
 			ColorIndireto = trace_ray(new_ray, scene, depth + 1, ClosestObj.coeficienteRefracao, MaxDepth, eye, lightPaths);
-			//Tem que multiplicar pela cor do objeto
 			float cossenoAng = ProdEscalar(normal, new_ray.direction);
 			ColorIndireto.r = ColorIndireto.r * ClosestObj.color.r * ClosestObj.kd*cossenoAng;
 			ColorIndireto.b = ColorIndireto.b * ClosestObj.color.b * ClosestObj.kd*cossenoAng;
@@ -472,7 +433,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-	//std::cout<<"PASSEI 1"<<endl;
 	if (hit == false)
 	{
 		if (BiDirectionalPT == 2)
@@ -487,24 +447,20 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				//Calcular "i"
 				if (inter.hit)
 				{
-					//std::cout << "Hit" << std::endl;
-					//Calcular "i" e "j" da matriz de pixels e adicionar cores
+					//Calcular "i" e "j" da matriz de pixels e salvar as cores
 					float imgHeight = 2.0;
 					float imgWidth = 2.0;
 					int i = floor((inter.hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
 					int j = floor((inter.hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
 					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
-					//Calculo das contribuições
-					//Salver cor na matriz de pixels
 				}
 			}
 		}
 		return;
 	}
-	//std::cout<<"PASSEI 2"<<endl;
+
 	LightPoint.p = vectorToPoint(hit_point);
-	//Possivelmente armazenar características do objeto em que houve intersecção
-	//Fizemos apenas o difuso e a transmissão
+	//Difuso e a transmissão
 	float ktot = ClosestObj.kd + ClosestObj.kt;
 	float r = rand01(0, 1) * ktot;
 	Ray new_ray;
@@ -523,9 +479,7 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		corAtualRaio.g = corAtualRaio.g * ClosestObj.color.g * ClosestObj.kd*cossenoAng;
 		LightPoint.c = corAtualRaio;
 		LightPath.push_back(LightPoint);
-		//std::cout<<"PASSEI 3"<<endl;
 		if(bounces<maxbounces) CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
-		//std::cout<<"PASSEI 4"<<endl;
 	}
 	else
 	{
@@ -555,7 +509,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		LightPath.push_back(LightPoint);
 		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
 	}
-	//std::cout<<"PASSEI 5"<<endl;
 	if (BiDirectionalPT == 2){
 		Ray LightCameraRay;
 		LightCameraRay.position = LightPoint.p;
@@ -565,7 +518,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		Vector3D Normal2;
 		vector<Face> CurrentFaces2;
 		bool hitLight = false;
-		//std::cout<<"PASSEI 6"<<endl;
 		for (int i = 0; i < objetos.size(); i++){
 			CurrentObj2 = objetos.at(i);
 			CurrentFaces2 = CurrentObj2.faces;
@@ -580,7 +532,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				}
 			}
 		}
-		//std::cout<<"PASSEI 7"<<endl;
 		if (!hitLight){
 			for (int j = 0; j < camera.faces.size(); j++){
 				Face f = camera.faces.at(j);
@@ -590,14 +541,11 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 				Intersec inter = intersection(lightRay, *P1, *P2, *P3);
 				//Calcular "i"
 				if (inter.hit){
-					//std::cout << "Hit" << std::endl;
 					//Calcular "i" e "j" da matriz de pixels e adicionar cores
 					float imgHeight = scene.window.y1 - scene.window.y0;
 					float imgWidth = scene.window.x1 - scene.window.x0;
 					int i = floor((inter.hit_point.x - scene.window.x0) * (scene.window.nPixelX - 1) / imgWidth);
 					int j = floor((inter.hit_point.y - scene.window.y0) * (scene.window.nPixelY - 1) / imgHeight);
-					//std::cout<< "Hitpoint:"<<hit_point.x << " "<<hit_point.y<<endl;
-					//std::cout<<"i, j:"<<i<<" "<<j<<endl;
 					colorLightPath[i][j] = csum(colorLightPath[i][j], corAtualRaio);
 					//Calculo das contribuições
 					//Salver cor na matriz de pixels
@@ -605,7 +553,6 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 			}
 		}
 	}
-	//std::cout<<"PASSEI 8"<<endl;
 }
 
 void render(Scene scene, int npaths, int maxDepth, int maxBounces)
@@ -635,7 +582,6 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 	float zMax = objetos.at(0).vertexs.at(0).z;
 	lightRay.position.y = objetos.at(0).vertexs.at(0).y;
 	float u1, u2;
-	//std::cout  <<"npath: " << npaths << std::endl;
 	file << "P3\n"
 		 << window.nPixelX << ' ' << window.nPixelY << "\n255\n";
 	for (int j = window.nPixelY - 1; j >= 0; j--)
@@ -649,13 +595,10 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 			{
 				sampleX = (i + rand01(0.0, 1.0)) * window_width / (window.nPixelX - 1) + Lower_Left.x;
 				sampleY = (j + rand01(0.0, 1.0)) * window_height / (window.nPixelY - 1) + Lower_Left.y;
-				//Tem que implementar essa função aqui
 
 				Vector3D direction = Subv(Sumv(KProd(sampleX, Vector3D(1, 0, 0)), KProd(sampleY, Vector3D(0, 1, 0))), origin);
 				ray.direction = Normalize(direction);
 
-				//std::cout << ray.direction.x <<" "<< ray.direction.y << " "<<ray.direction.z << endl;
-				//std::cout << "Teste" << std::endl;
 				if (BiDirectionalPT > 0)
 				{
 					lightRay.position.x = rand01(xMin, xMax);
@@ -666,15 +609,11 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 					LightPath.clear();
 					Vector3D dirLuz = Normal(*scene.light.object->faces.at(0).v1, *scene.light.object->faces.at(0).v2, *scene.light.object->faces.at(0).v3);
 					lightRay.direction = random_Hemisphere_direction(u1, u2, dirLuz);
-					//std::cout<<"TESTE 1 "<<i<< " "<<j<<endl;
 					CalcularLightPath(scene, lightRay, 0, maxBounces, scene.light.color);
-					//std::cout<<"TESTE 2 "<<i<< " "<<j<<endl;
 					
 				}
 				colorAux = trace_ray(ray, scene, 0, 1.0, maxDepth, eye, LightPath);
-				//std::cout<<"TESTE 2 "<<i<< " "<<j<<endl;
 				colorEyePath[i][j] = csum(colorEyePath[i][j], colorAux);
-				//std::cout << "TesteDepois" << std::endl;
 			}
 			colorEyePath[i][j].r = colorEyePath[i][j].r / npaths;
 			colorEyePath[i][j].g = colorEyePath[i][j].g / npaths;
@@ -685,7 +624,6 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 				colorLightPath[i][j].g = colorLightPath[i][j].g / npaths;
 				colorLightPath[i][j].b = colorLightPath[i][j].b / npaths;
 			}
-			//std::cout<<"TESTE 3 "<<i<< " "<<j<<endl;
 		}
 		std::cout << "[";
 		int pos = window.nPixelX * ((window.nPixelX - j) / window.nPixelX);
@@ -741,12 +679,6 @@ int main()
 		}
 	}
 
-	/*if(temp){
-        std::cout <<"Objetos na cena:"<< scene.objects.size() << std::endl;
-    }else{
-        std::cout << "Não Funcionou" << std::endl;
-    }*/
-	//Acho que está sem usar
 	//scene.eye = compute_uvw(scene.eye);
 	objetos = scene.objects;
 	std::cout << "Numero de Obj " << objetos.size();
@@ -758,14 +690,9 @@ int main()
 		Vertex f1v2 = Point(scene.window.x0, scene.window.y0, 0);
 		Vertex f1v3 = Point(scene.window.x1, scene.window.y0, 0);
 		Vertex f1v4 = Point(scene.window.x1, scene.window.y1, 0);
-		
-		//std::cout<<" f1v4 "<<f1v4.x << " "<<f1v4.y <<endl;
 		f1.v1 = &f1v1;
 		f1.v2 = &f1v2;
 		f1.v3 = &f1v3;
-		//std::cout<<" f1v1 "<<f1.v1->x << " "<<f1v1.y <<endl;
-		//std::cout<<" f1v2 "<<f1.v2->x << " "<<f1v2->y <<endl;
-		//std::cout<<" f1v3 "<<f1.v3->x << " "<<f1v3->y <<endl;
 		Face f2;
 		f2.v1 = &f1v1;
 		f2.v2 = &f1v3;
@@ -782,35 +709,11 @@ int main()
 			objPath = "cornell_box\\";
 		if (CornellBox == 2)
 			objPath = "cornell_box_2\\";
-		//char realPath [100]= "cornel_box\\";
-		//strcat(objPath, objetos.at(i).path);
 		objPath += objetos.at(i).path;
-		//std::cout << objPath << std::endl;
 		lerObjeto(objPath.c_str(), objetos.at(i));
 		std::cout << "Objeto: " << i << endl;
-		//objetos.at(i).normalVertice();
 	}
 	scene.light.object = &objetos.at(0);
-	/*
-	for(int i = 0; i < objetos.size();i++){
-		std::cout << "Objeto: " << i << endl;
-		std::cout << "Cor do objeto: " << objetos.at(i).color.r <<" "<< objetos.at(i).color.g <<" "<< objetos.at(i).color.b << endl;
-		for (int j = 0; j < objetos.at(i).faces.size(); j++){
-			std::cout << "Face: " << j << endl;
-			std::cout << objetos.at(i).faces.at(j).v1->x << " "<<objetos.at(i).faces.at(j).v1->y <<" "<< objetos.at(i).faces.at(j).v1->z << endl;
-			std::cout << objetos.at(i).faces.at(j).v2->x << " "<<objetos.at(i).faces.at(j).v2->y <<" "<< objetos.at(i).faces.at(j).v2->z << endl;
-			std::cout << objetos.at(i).faces.at(j).v3->x << " "<<objetos.at(i).faces.at(j).v3->y <<" "<< objetos.at(i).faces.at(j).v3->z << endl;
-		}
-	}
-	*/
-	/*
-	Vector3D normal = Vector3D(-1,0,0);
-	for (int a=0; a< 100; a++){
-		float x = rand01(0,1);
-		float y = rand01(0,1);
-		Vector3D dir = random_direction(x,y,normal);
-		std::cout<< dir.x << " " << dir.y << " " << dir.z<<endl;
-	}*/
 	render(scene, nPaths, mDepth, mBounces);
 	file.close();
 	std::cout << "Finalizado" << std::endl;
