@@ -16,21 +16,21 @@
 
 vector<Objeto> objetos;
 //Alguns parâmetros
-const int mDepth = 5;
-const int mBounces = 3;
-const bool UsarShadowRay = false;
-const bool ShadowRayEmTodos = false;
-const int NShadow_Ray = 5;
-const int nPaths = 20;
-const int CornellBox = 2;
-const bool ApplyTonemapping = false;
+int mDepth = -1;
+int mBounces = -1;
+bool UsarShadowRay = false;
+bool ShadowRayEmTodos = false;
+int NShadow_Ray = -1;
+int nPaths = -1;
+int CornellBox = -1;
+bool ApplyTonemapping = false;
 
 
 //Variável para determinar qual tipo de BPDT vai ser utilizado
 //0 - Sem BiDirectional, Path tracing normal
 //1 - Cada Ponto do LightPath é uma fonte de luz secundária
 //2 - Lançamos o light Path e cada ponto envia um raio para a câmera
-const int BiDirectionalPT = 2;
+int BiDirectionalPT = -1;
 
 ofstream file;
 Object camera;
@@ -551,7 +551,8 @@ void CalcularLightPath(Scene scene, Ray lightRay, int bounces, int maxbounces, C
 		Vetor dist2 = KProd(bias, normal);
 		new_ray.position = vectorToPoint(Subv(hit_point, dist2));
 		new_ray.direction = Normalize(dir);
-
+		LightPoint.c = corAtualRaio;
+		LightPath.push_back(LightPoint);
 		CalcularLightPath(scene, new_ray, bounces + 1, maxbounces, corAtualRaio);
 	}
 	//std::cout<<"PASSEI 5"<<endl;
@@ -721,10 +722,73 @@ void render(Scene scene, int npaths, int maxDepth, int maxBounces)
 	}
 }
 
+void init(){
+	do{
+		std::cout << "Defina a profundidade: " << std::endl;
+		std::cin >> mDepth;
+
+	}while(mDepth <= 0);
+	char aux;
+	do{
+		std::cout << "Deseja usar shadowray?: Y/n " << std::endl;
+		std::cin >> aux;
+		if(tolower(aux) == 'y'){
+			UsarShadowRay = true;
+		}else{
+			UsarShadowRay = false;
+		}
+	}while(!(aux == 'n' || aux == 'y'));
+	if(UsarShadowRay){
+		char aux2;
+		do{
+			std::cout << "Deseja usar o shadowray em todas as profundidades?: Y/n " << std::endl;
+			std::cin >> aux2;
+			if(tolower(aux2) == 'y'){
+				ShadowRayEmTodos = true;
+			}else{
+				ShadowRayEmTodos = false;
+			}
+		}while(!(aux2 == 'n' || aux2 == 'y'));		
+		do{
+			std::cout << "Defina a quantidade de shadowrays: " << std::endl;
+			std::cin >> NShadow_Ray;
+
+		}while(NShadow_Ray < 0);
+	}
+	do{
+		std::cout << "Defina qual cornellbox usar (1 - padrão do material, 2 - fonte de luz deslocada \"sanca\"): "  << std::endl;
+		std::cin >> CornellBox;
+	}while(CornellBox > 2 || CornellBox < 1);
+	char aux3;
+	do{
+		std::cout << "Deseja aplicar o Tonemapping? Y/n" << std::endl;
+		std::cin >> aux3;
+		if(tolower(aux3) == 'y'){
+			ApplyTonemapping = true;
+		}else{
+			ApplyTonemapping = false;
+		}
+	}while(!(aux3 == 'n' || aux3 == 'y'));
+	do{
+		std::cout << "Defina a quantidade de amostras por pixel: " << std::endl;
+		std::cin >> nPaths;
+	}while(nPaths <= 0);
+	do{
+		std::cout << "Qual algoritmo de iluminação você quer usar:\n" << "0 - Path Tracing padrão\n1 - Cada Ponto do LightPath é uma fonte de luz secundária\n2 - Lançamos o light Path e cada ponto envia um raio para a câmera" << std::endl;
+		std::cin >> BiDirectionalPT;
+		
+		if(BiDirectionalPT > 0){
+			std::cout << "Defina a quantidade de bounces: " << std::endl;
+			std::cin >> mBounces;
+		}
+	}while(BiDirectionalPT > 2 || BiDirectionalPT < 0);
+}
+
 /*
 O verdadeiro main*/
 int main()
 {
+	init();
 	Scene scene;
 	if (CornellBox == 1)
 		bool temp = LoadScene("cornell_box\\cornellroom.sdl", scene);
@@ -774,6 +838,7 @@ int main()
 	}
 
 	std::cout << " ambient " << scene.ambient << " background " << scene.background.r << scene.background.g << scene.background.b << " npath " << scene.npaths << " tonemap " << scene.tonemapping << " seed " << scene.seed << endl;
+	std::cout << " mdepth: " << mDepth << " mBounces: " << mBounces << " usarshadowray: " << UsarShadowRay << " shadowrayemtodos: " << ShadowRayEmTodos << " qtd shadowrays: " << NShadow_Ray << " npaths: " << nPaths << " cornellbox: " << CornellBox << " tonemapping: " << ApplyTonemapping << " qual algortimo: " << BiDirectionalPT << std::endl;
 	for (int i = 0; i < scene.objects.size(); i++)
 	{
 		std::string objPath;
@@ -786,7 +851,7 @@ int main()
 		objPath += objetos.at(i).path;
 		//std::cout << objPath << std::endl;
 		lerObjeto(objPath.c_str(), objetos.at(i));
-		std::cout << "Objeto: " << i << endl;
+		//std::cout << "Objeto: " << i << endl;
 		//objetos.at(i).normalVertice();
 	}
 	scene.light.object = &objetos.at(0);
@@ -810,6 +875,7 @@ int main()
 		Vector3D dir = random_direction(x,y,normal);
 		std::cout<< dir.x << " " << dir.y << " " << dir.z<<endl;
 	}*/
+	
 	render(scene, nPaths, mDepth, mBounces);
 	file.close();
 	std::cout << "Finalizado" << std::endl;
